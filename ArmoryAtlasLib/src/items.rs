@@ -79,7 +79,7 @@ pub async fn insert_items(pool: &MySqlPool, num_items: usize) -> Result<()> {
         sqlx::query("INSERT INTO Items (ItemID, ProductID, Size, LevelOfUse) VALUES (UUID_TO_BIN(UUID()), ?, ?, ?)")
             .bind(&item.product_id)
             .bind(&item.size)
-            .bind(&item.level_of_use)
+            .bind(item.level_of_use)
             .execute(pool)
             .await?;
     }

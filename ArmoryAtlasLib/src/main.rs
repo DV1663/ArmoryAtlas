@@ -1,12 +1,12 @@
-use std::io::Read;
+
 use anyhow::Result;
 use clap::Parser;
 use sqlx_mysql::MySqlPool;
-use armory_atlas_lib::products::insert_products;
+
 use armory_atlas_lib::cli::{Command, CommandType};
 use armory_atlas_lib::config::{get_config, write_config};
 use armory_atlas_lib::{extract_sql, generate_test_data};
-use armory_atlas_lib::items::insert_items;
+
 use armory_atlas_lib::password_handler::get_db_pass;
 
 #[tokio::main]

@@ -1,6 +1,6 @@
 use crate::config::AppConfig;
 use clap::{Args, Parser, Subcommand};
-use serde::{Deserialize, Serialize};
+
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
