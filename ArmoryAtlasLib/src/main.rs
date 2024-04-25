@@ -1,4 +1,3 @@
-
 use anyhow::Result;
 use clap::Parser;
 use sqlx_mysql::MySqlPool;
@@ -26,11 +25,15 @@ async fn main() -> Result<()> {
             write_config(&args)?;
         }
         Some(CommandType::Generate(args)) => {
-            let pool = MySqlPool::connect(format!("mysql://{user}:{password}@{host}/{database}").as_str()).await?;
+            let pool =
+                MySqlPool::connect(format!("mysql://{user}:{password}@{host}/{database}").as_str())
+                    .await?;
             generate_test_data(args, &pool).await?;
-        },
+        }
         Some(CommandType::Manage(args)) => {
-            let pool = MySqlPool::connect(format!("mysql://{user}:{password}@{host}/{database}").as_str()).await?;
+            let pool =
+                MySqlPool::connect(format!("mysql://{user}:{password}@{host}/{database}").as_str())
+                    .await?;
             if args.drop_tables {
                 let queries = extract_sql("SQL/Drop.sql")?;
 

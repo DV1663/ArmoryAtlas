@@ -32,45 +32,51 @@ pub struct Items {
     #[serde(rename = "Size")]
     pub size: String,
     #[serde(rename = "LevelOfUse")]
-    pub level_of_use: f32
+    pub level_of_use: f32,
 }
 
 pub fn generate_items(num_items: usize) -> Result<Vec<Items>> {
     let products = products::get_products()?;
 
-    println!("Generating {} items for {} diffrent products!", num_items, products.len());
+    println!(
+        "Generating {} items for {} diffrent products!",
+        num_items,
+        products.len()
+    );
 
     let mut items = Vec::new();
 
-    let items_iter = products.par_iter().map(|product| {
-        let mut product_items = Vec::new();
-        let mut rng = rand::thread_rng();
-        
-        let mut next_idx = 0;
+    let items_iter = products
+        .par_iter()
+        .map(|product| {
+            let mut product_items = Vec::new();
+            let mut rng = rand::thread_rng();
 
-        for _ in 0..num_items {
-            let item = Items {
-                item_id: String::new(),
-                product_id: product.product_id.clone(),
-                size: SIZES[next_idx].to_string(),
-                level_of_use: rng.gen_range(0.0..1.0)
-            };
+            let mut next_idx = 0;
 
-            product_items.push(item);
+            for _ in 0..num_items {
+                let item = Items {
+                    item_id: String::new(),
+                    product_id: product.product_id.clone(),
+                    size: SIZES[next_idx].to_string(),
+                    level_of_use: rng.gen_range(0.0..1.0),
+                };
 
-            next_idx = (next_idx + 1) % SIZES.len();
-        }
+                product_items.push(item);
 
-        product_items
-    }).collect::<Vec<Vec<Items>>>();
-    
+                next_idx = (next_idx + 1) % SIZES.len();
+            }
+
+            product_items
+        })
+        .collect::<Vec<Vec<Items>>>();
+
     for product_items in items_iter {
         items.extend(product_items);
     }
 
     Ok(items)
 }
-
 
 pub async fn insert_items(pool: &MySqlPool, num_items: usize) -> Result<()> {
     let items = generate_items(num_items)?;

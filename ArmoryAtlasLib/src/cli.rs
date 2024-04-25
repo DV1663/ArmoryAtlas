@@ -1,7 +1,6 @@
 use crate::config::AppConfig;
 use clap::{Args, Parser, Subcommand};
 
-
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct Command {
@@ -19,7 +18,7 @@ pub struct Command {
 pub enum CommandType {
     Config(AppConfig),
     Generate(GenerateArgs),
-    Manage(ManageArgs)
+    Manage(ManageArgs),
 }
 
 #[derive(Args, Debug, Clone)]
@@ -27,7 +26,7 @@ pub struct ManageArgs {
     #[arg(short, long)]
     pub drop_tables: bool,
     #[arg(short, long)]
-    pub create_tables: bool
+    pub create_tables: bool,
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -35,26 +34,23 @@ pub enum GenerateSubCommands {
     Products,
     Items(ItemsArgs),
     Users(UsersArgs),
-    Loans(LoansArgs)
+    Loans(LoansArgs),
 }
 
 #[derive(Args, Debug, Clone)]
 pub struct UsersArgs {
-    pub num_users: Option<i64>
-
+    pub num_users: Option<i64>,
 }
 
 #[derive(Args, Debug, Clone)]
 pub struct LoansArgs {
     pub products: bool,
-
 }
 
 #[derive(Args, Debug, Clone)]
 pub struct ItemsArgs {
     #[arg(default_value = "100")]
-    pub num_items: usize
-
+    pub num_items: usize,
 }
 
 #[derive(Args, Debug, Clone)]

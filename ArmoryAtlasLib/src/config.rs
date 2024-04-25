@@ -1,9 +1,9 @@
+use crate::CONFIG_FILE;
+use clap::Args;
 use config::Config;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::path::PathBuf;
-use clap::Args;
-use crate::CONFIG_FILE;
 
 #[derive(Args, Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
@@ -12,14 +12,14 @@ pub struct AppConfig {
     #[arg(short = 'H', long, default_value = "localhost")]
     pub host: String,
     #[arg(short, long, default_value = "ArmoryAtlas")]
-    pub database: String
+    pub database: String,
 }
 
 pub fn get_config() -> anyhow::Result<Config> {
     #[cfg(not(target_os = "windows"))]
     let path = PathBuf::new().join(env!("HOME")).join(CONFIG_FILE);
 
-   #[cfg(target_os = "windows")]
+    #[cfg(target_os = "windows")]
     let path = PathBuf::new().join(env!("USERPROFILE")).join(CONFIG_FILE);
 
     if !path.exists() {
@@ -38,10 +38,10 @@ pub fn get_config() -> anyhow::Result<Config> {
 
 pub fn write_config(app_config: &AppConfig) -> anyhow::Result<()> {
     #[cfg(not(target_os = "windows"))]
-        let path = PathBuf::new().join(env!("HOME")).join(CONFIG_FILE);
+    let path = PathBuf::new().join(env!("HOME")).join(CONFIG_FILE);
 
     #[cfg(target_os = "windows")]
-        let path = PathBuf::new().join(env!("USERPROFILE")).join(CONFIG_FILE);
+    let path = PathBuf::new().join(env!("USERPROFILE")).join(CONFIG_FILE);
 
     if !path.exists() {
         println!("Config file does not exist. Creating it...");

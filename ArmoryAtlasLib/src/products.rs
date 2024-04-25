@@ -1,7 +1,7 @@
 use anyhow::Result;
-use std::io::Read;
 use serde::{Deserialize, Serialize};
 use sqlx_mysql::MySqlPool;
+use std::io::Read;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Products {
@@ -10,7 +10,7 @@ pub struct Products {
     #[serde(rename = "NameOfProduct")]
     pub product_name: String,
     #[serde(rename = "Type")]
-    pub product_type: String
+    pub product_type: String,
 }
 
 pub fn get_products() -> Result<Vec<Products>> {
@@ -39,6 +39,6 @@ pub async fn insert_products(pool: &MySqlPool) -> Result<()> {
                 .await?;
         }
     }
-    
+
     Ok(())
 }
