@@ -1,9 +1,10 @@
 use anyhow::Result;
 use clap::Parser;
 use sqlx_mysql::MySqlPool;
-use armory_atlas_lib::{generate_products, };
+use armory_atlas_lib::products::insert_products;
 use armory_atlas_lib::cli::{Command, CommandType};
 use armory_atlas_lib::config::{get_config, write_config};
+use armory_atlas_lib::items::insert_items;
 use armory_atlas_lib::password_handler::get_db_pass;
 
 #[tokio::main]
@@ -18,24 +19,20 @@ async fn main() -> Result<()> {
     );
 
     match cmd.subcommands {
-        CommandType::Config(args) => {
+        Some(CommandType::Config(args)) => {
             write_config(&args)?;
         }
+        _ => {}
     };
 
     let password = get_db_pass(&user, &host)?;
     
     let pool = MySqlPool::connect(format!("mysql://{user}:{password}@{host}/{database}").as_str()).await?;
-    let products = generate_products()?;
-
-    for product in products {
-        sqlx::query("INSERT INTO Products (ProductID, NameOfProduct, Type) VALUES (?, ?, ?)")
-            .bind(product.product_id)
-            .bind(product.product_name)
-            .bind(product.product_type)
-            .execute(&pool)
-            .await?;
-    }
+    
+    //println!("Inserting products");
+    //insert_products(&pool).await?;
+    println!("Inserting Items");
+    insert_items(&pool, 10).await?;
 
     Ok(())
 }

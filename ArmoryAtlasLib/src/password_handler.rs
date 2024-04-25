@@ -3,7 +3,7 @@ use keyring::Entry;
 use std::io;
 
 fn get_keyring(usr: &str, host: &str) -> Result<Entry> {
-    Ok(Entry::new("rustic_sql_manager", format!("{usr}@{host}").as_str())?)
+    Ok(Entry::new("armoryatlas", format!("{usr}@{host}").as_str())?)
 }
 
 pub fn get_db_pass(usr: &str, host: &str) -> Result<String> {

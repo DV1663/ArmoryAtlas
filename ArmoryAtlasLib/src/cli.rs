@@ -11,7 +11,7 @@ pub struct Command {
     #[arg(short, long)]
     pub database: Option<String>,
     #[command(subcommand)]
-    pub subcommands: CommandType,
+    pub subcommands: Option<CommandType>,
 }
 
 #[derive(Subcommand)]

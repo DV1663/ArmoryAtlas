@@ -6,6 +6,7 @@ edition = "2021"
 
 
 [dependencies]
+rayon = "1.10.0"
 anyhow = { version = "1.0.68", features = ["backtrace"] }
 config = { version = "0.14.0", features = ["toml"] }
 keyring = { version = "2.3.2", features = ["platform-all"] }
@@ -18,3 +19,4 @@ sqlx = { version = "0.7.4", features = ["mysql", "macros", "sqlx-mysql", "json",
 sqlx-mysql = { version = "0.7.4", features = ["serde"] }
 tokio = { version = "1.0.0", features = ["rt", "rt-multi-thread", "macros", "full"] }
 rpassword = "7.3.1"
+rand = "0.8.5"
