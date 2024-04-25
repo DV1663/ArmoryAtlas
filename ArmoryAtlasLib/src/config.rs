@@ -16,7 +16,11 @@ pub struct AppConfig {
 }
 
 pub fn get_config() -> anyhow::Result<Config> {
+    #[cfg(not(target_os = "windows"))]
     let path = PathBuf::new().join(env!("HOME")).join(CONFIG_FILE);
+
+   #[cfg(target_os = "windows")]
+    let path = PathBuf::new().join(env!("USERPROFILE")).join(CONFIG_FILE);
 
     if !path.exists() {
         println!("Config file does not exist. Creating it...");
@@ -33,7 +37,11 @@ pub fn get_config() -> anyhow::Result<Config> {
 }
 
 pub fn write_config(app_config: &AppConfig) -> anyhow::Result<()> {
-    let path = PathBuf::new().join(env!("HOME")).join(CONFIG_FILE);
+    #[cfg(not(target_os = "windows"))]
+        let path = PathBuf::new().join(env!("HOME")).join(CONFIG_FILE);
+
+    #[cfg(target_os = "windows")]
+        let path = PathBuf::new().join(env!("USERPROFILE")).join(CONFIG_FILE);
 
     if !path.exists() {
         println!("Config file does not exist. Creating it...");

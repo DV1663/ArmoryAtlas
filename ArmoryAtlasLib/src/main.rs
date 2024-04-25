@@ -1,9 +1,11 @@
+use std::io::Read;
 use anyhow::Result;
 use clap::Parser;
 use sqlx_mysql::MySqlPool;
 use armory_atlas_lib::products::insert_products;
 use armory_atlas_lib::cli::{Command, CommandType};
 use armory_atlas_lib::config::{get_config, write_config};
+use armory_atlas_lib::{extract_sql, generate_test_data};
 use armory_atlas_lib::items::insert_items;
 use armory_atlas_lib::password_handler::get_db_pass;
 
@@ -18,21 +20,37 @@ async fn main() -> Result<()> {
         cmd.database.unwrap_or(config.get("database")?),
     );
 
+    let password = get_db_pass(&user, &host)?;
     match cmd.subcommands {
         Some(CommandType::Config(args)) => {
             write_config(&args)?;
         }
-        _ => {}
-    };
+        Some(CommandType::Generate(args)) => {
+            let pool = MySqlPool::connect(format!("mysql://{user}:{password}@{host}/{database}").as_str()).await?;
+            generate_test_data(args, &pool).await?;
+        },
+        Some(CommandType::Manage(args)) => {
+            let pool = MySqlPool::connect(format!("mysql://{user}:{password}@{host}/{database}").as_str()).await?;
+            if args.drop_tables {
+                let queries = extract_sql("SQL/Drop.sql")?;
 
-    let password = get_db_pass(&user, &host)?;
-    
-    let pool = MySqlPool::connect(format!("mysql://{user}:{password}@{host}/{database}").as_str()).await?;
-    
-    //println!("Inserting products");
-    //insert_products(&pool).await?;
-    println!("Inserting Items");
-    insert_items(&pool, 10).await?;
+                for query in queries {
+                    sqlx::query(&query).execute(&pool).await?;
+                }
+            }
+
+            if args.create_tables {
+                let queries = extract_sql("SQL/Tables.sql")?;
+
+                for query in queries {
+                    sqlx::query(&query).execute(&pool).await?;
+                }
+            }
+        }
+        _ => {
+            eprintln!("Unknown command passed!")
+        }
+    };
 
     Ok(())
 }

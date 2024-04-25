@@ -1,5 +1,6 @@
 use crate::config::AppConfig;
 use clap::{Args, Parser, Subcommand};
+use serde::{Deserialize, Serialize};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -17,15 +18,47 @@ pub struct Command {
 #[derive(Subcommand)]
 pub enum CommandType {
     Config(AppConfig),
+    Generate(GenerateArgs),
+    Manage(ManageArgs)
 }
 
-#[derive(Args)]
-pub struct ConfigCommandArgs {
-    #[arg(short, long, default_value = "root")]
-    user: String,
-    #[arg(short = 'H', long, default_value = "localhost")]
-    host: String,
-    #[arg(short, help = "Store the password in the keyring")]
-    password: bool,
+#[derive(Args, Debug, Clone)]
+pub struct ManageArgs {
+    #[arg(short, long)]
+    pub drop_tables: bool,
+    #[arg(short, long)]
+    pub create_tables: bool
 }
 
+#[derive(Subcommand, Debug, Clone)]
+pub enum GenerateSubCommands {
+    Products,
+    Items(ItemsArgs),
+    Users(UsersArgs),
+    Loans(LoansArgs)
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct UsersArgs {
+    pub num_users: Option<i64>
+
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct LoansArgs {
+    pub products: bool,
+
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct ItemsArgs {
+    #[arg(default_value = "100")]
+    pub num_items: usize
+
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct GenerateArgs {
+    #[command(subcommand)]
+    pub subcommands: Option<GenerateSubCommands>,
+}

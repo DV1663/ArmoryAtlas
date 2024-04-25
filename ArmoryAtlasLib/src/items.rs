@@ -38,6 +38,8 @@ pub struct Items {
 pub fn generate_items(num_items: usize) -> Result<Vec<Items>> {
     let products = products::get_products()?;
 
+    println!("Generating {} items for {} diffrent products!", num_items, products.len());
+
     let mut items = Vec::new();
 
     let items_iter = products.par_iter().map(|product| {

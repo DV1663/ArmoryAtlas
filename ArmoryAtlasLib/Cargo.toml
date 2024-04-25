@@ -20,3 +20,4 @@ sqlx-mysql = { version = "0.7.4", features = ["serde"] }
 tokio = { version = "1.0.0", features = ["rt", "rt-multi-thread", "macros", "full"] }
 rpassword = "7.3.1"
 rand = "0.8.5"
+regex = "1.10.4"

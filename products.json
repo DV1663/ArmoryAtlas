@@ -1,12 +1,142 @@
 [
   {
-  "ProductID": "M240001-3708451",
-  "NameOfProduct": "Uniform Tröja",
-  "Type": "Tröja"
+    "ProductID": "M240001-3708453",
+    "NameOfProduct": "Field Cap",
+    "Type": "Hat"
   },
   {
-    "ProductID": "M240011-6531232",
-    "NameOfProduct": "Uniform Byxor",
-    "Type": "Byxor"
+    "ProductID": "M240001-3708454",
+    "NameOfProduct": "Combat Gloves",
+    "Type": "Gloves"
+  },
+  {
+    "ProductID": "M240002-3708455",
+    "NameOfProduct": "Tactical Boots",
+    "Type": "Footwear"
+  },
+  {
+    "ProductID": "M240002-3708456",
+    "NameOfProduct": "Sniper Rifle",
+    "Type": "Weapon"
+  },
+  {
+    "ProductID": "M240003-3708457",
+    "NameOfProduct": "Night Vision Goggles",
+    "Type": "Equipment"
+  },
+  {
+    "ProductID": "M240003-3708458",
+    "NameOfProduct": "Camouflage Net",
+    "Type": "Equipment"
+  },
+  {
+    "ProductID": "M240004-3708459",
+    "NameOfProduct": "Assault Backpack",
+    "Type": "Bag"
+  },
+  {
+    "ProductID": "M240004-3708460",
+    "NameOfProduct": "Water Purification Tablets",
+    "Type": "Supplies"
+  },
+  {
+    "ProductID": "M240005-3708461",
+    "NameOfProduct": "Medic Kit",
+    "Type": "Supplies"
+  },
+  {
+    "ProductID": "M240005-3708462",
+    "NameOfProduct": "Parachute",
+    "Type": "Equipment"
+  },
+  {
+    "ProductID": "M240006-3708463",
+    "NameOfProduct": "Signal Flare",
+    "Type": "Equipment"
+  },
+  {
+    "ProductID": "M240006-3708464",
+    "NameOfProduct": "Portable Radio",
+    "Type": "Communications"
+  },
+  {
+    "ProductID": "M240007-3708465",
+    "NameOfProduct": "Combat Knife",
+    "Type": "Weapon"
+  },
+  {
+    "ProductID": "M240007-3708466",
+    "NameOfProduct": "Body Armor",
+    "Type": "Protection"
+  },
+  {
+    "ProductID": "M240008-3708467",
+    "NameOfProduct": "Gas Mask",
+    "Type": "Protection"
+  },
+  {
+    "ProductID": "M240008-3708468",
+    "NameOfProduct": "Thermal Imaging Camera",
+    "Type": "Equipment"
+  },
+  {
+    "ProductID": "M240009-3708469",
+    "NameOfProduct": "Rocket Launcher",
+    "Type": "Weapon"
+  },
+  {
+    "ProductID": "M240009-3708470",
+    "NameOfProduct": "Anti-Tank Mine",
+    "Type": "Weapon"
+  },
+  {
+    "ProductID": "M240010-3708471",
+    "NameOfProduct": "Combat Helmet",
+    "Type": "Protection"
+  },
+  {
+    "ProductID": "M240010-3708472",
+    "NameOfProduct": "Elbow Pads",
+    "Type": "Protection"
+  },
+  {
+    "ProductID": "M240011-3708473",
+    "NameOfProduct": "Tactical Vest",
+    "Type": "Protection"
+  },
+  {
+    "ProductID": "M240011-3708474",
+    "NameOfProduct": "Flashlight",
+    "Type": "Equipment"
+  },
+  {
+    "ProductID": "M240012-3708475",
+    "NameOfProduct": "Ammunition Box",
+    "Type": "Supplies"
+  },
+  {
+    "ProductID": "M240012-3708476",
+    "NameOfProduct": "Drone",
+    "Type": "Equipment"
+  },
+  {
+    "ProductID": "M240013-3708477",
+    "NameOfProduct": "Field Rations",
+    "Type": "Supplies"
+  },
+  {
+    "ProductID": "M240013-3708478",
+    "NameOfProduct": "Infrared Beacon",
+    "Type": "Equipment"
+  },
+  {
+    "ProductID": "M240014-3708479",
+    "NameOfProduct": "Camouflage Paint",
+    "Type": "Supplies"
+  },
+  {
+    "ProductID": "M240014-3708480",
+    "NameOfProduct": "Knee Pads",
+    "Type": "Protection"
   }
 ]
