@@ -21,3 +21,5 @@ tokio = { version = "1.0.0", features = ["rt", "rt-multi-thread", "macros", "ful
 rpassword = "7.3.1"
 rand = "0.8.5"
 regex = "1.10.4"
+crossterm = "0.27.0"
+ratatui = "0.26.2"

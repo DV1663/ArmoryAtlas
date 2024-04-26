@@ -6,6 +6,7 @@ use crate::cli::{GenerateArgs, GenerateSubCommands};
 use crate::items::insert_items;
 use crate::products::insert_products;
 use anyhow::Result;
+use ratatui::widgets::Table;
 use regex::Regex;
 use sqlx_mysql::MySqlPool;
 
@@ -14,8 +15,20 @@ pub mod config;
 pub mod items;
 pub mod password_handler;
 pub mod products;
+pub mod tui;
 
 pub const CONFIG_FILE: &str = ".config/armoryatlas/config.toml";
+
+use sqlx::FromRow;
+
+#[derive(Debug, FromRow)]
+struct ItemProduct {
+    item_id: i32,
+    name_of_product: String,
+    type_of_product: String,
+    size: String,
+    level_of_use: String,
+}
 
 pub async fn generate_test_data(args: GenerateArgs, pool: &MySqlPool) -> Result<()> {
     match args.subcommands {

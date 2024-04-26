@@ -7,6 +7,7 @@ use armory_atlas_lib::config::{get_config, write_config};
 use armory_atlas_lib::{extract_sql, generate_test_data};
 
 use armory_atlas_lib::password_handler::get_db_pass;
+use armory_atlas_lib::tui::run_tui;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -51,7 +52,10 @@ async fn main() -> Result<()> {
             }
         }
         _ => {
-            eprintln!("Unknown command passed!")
+            let pool =
+                MySqlPool::connect(format!("mysql://{user}:{password}@{host}/{database}").as_str())
+                    .await?;
+            run_tui(pool)?;
         }
     };
 
