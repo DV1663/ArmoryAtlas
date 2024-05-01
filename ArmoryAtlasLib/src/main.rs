@@ -48,7 +48,7 @@ pub fn setup_logger() -> Result<()> {
 #[tokio::main]
 async fn main() -> Result<()> {
     setup_logger()?;
-    
+
     let cmd = Command::parse();
     let config = get_config()?;
 
@@ -95,22 +95,22 @@ async fn main() -> Result<()> {
                     .await?;
 
             /*let query = "
-                SELECT
-                    Items.ItemID AS item_id,
-                    Products.NameOfProduct AS name_of_product,
-                    Products.Type AS type_of_product,
-                    Items.Size AS size,
-                    Items.LevelOfUse AS level_of_use
-                FROM
-                    Items
-                INNER JOIN
-                    Products ON Items.ProductID = Products.ProductID
-            ";
+                            SELECT
+                                Items.ItemID AS item_id,
+                                Products.NameOfProduct AS name_of_product,
+                                Products.Type AS type_of_product,
+                                Items.Size AS size,
+                                Items.LevelOfUse AS level_of_use
+                            FROM
+                                Items
+                            INNER JOIN
+                                Products ON Items.ProductID = Products.ProductID
+                        ";
 
-            let items: Vec<ItemProduct> = sqlx::query_as::<_, ItemProduct>(query).fetch_all(&pool).await?;
-            
-            println!("{:?}", items[0]);
-*/
+                        let items: Vec<ItemProduct> = sqlx::query_as::<_, ItemProduct>(query).fetch_all(&pool).await?;
+
+                        println!("{:?}", items[0]);
+            */
             run_tui(pool).await?;
         }
     };

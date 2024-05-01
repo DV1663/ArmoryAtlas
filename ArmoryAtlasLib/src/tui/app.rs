@@ -1,5 +1,5 @@
 use anyhow::Result;
-use ratatui::widgets::Table;
+
 use sqlx_mysql::MySqlPool;
 
 use crate::config::get_config;
@@ -9,13 +9,13 @@ pub enum CurrentScreen {
     Main,
     Settings,
     Config,
-    Exit
+    Exit,
 }
 
 #[derive(Clone)]
 pub enum CurrentlyEditing {
     Config,
-    Search
+    Search,
 }
 
 #[derive(Clone)]
@@ -28,13 +28,17 @@ pub struct App {
     pub currently_editing: Option<CurrentlyEditing>,
     pub current_page: usize,
     pub items_per_page: usize,
-    pub max_page: usize
+    pub max_page: usize,
 }
 
 impl App {
     pub fn new(pool: MySqlPool) -> Result<Self> {
         let config = get_config()?;
-        let (user, host, database) = (config.get("user")?, config.get("host")?, config.get("database")?);
+        let (user, host, database) = (
+            config.get("user")?,
+            config.get("host")?,
+            config.get("database")?,
+        );
         Ok(Self {
             pool,
             user,
@@ -44,7 +48,7 @@ impl App {
             currently_editing: None,
             current_page: 0,
             items_per_page: 15,
-            max_page: 0
+            max_page: 0,
         })
     }
 

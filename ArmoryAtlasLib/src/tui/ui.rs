@@ -1,10 +1,8 @@
 use anyhow::Result;
-use ratatui::Frame;
-use ratatui::prelude::{Color,
-                       Constraint, Direction, Layout, Line, Rect, Span, Style, Text};
-use ratatui::widgets::{Borders, Paragraph, Table};
+use ratatui::prelude::{Color, Constraint, Direction, Layout, Line, Rect, Span, Style, Text};
 use ratatui::widgets::Block;
-
+use ratatui::widgets::{Borders, Paragraph, Table};
+use ratatui::Frame;
 
 use crate::tui::app::{App, CurrentScreen};
 
@@ -49,7 +47,7 @@ pub fn ui(f: &mut Frame<'_>, app: &App, data: Option<Table>) -> Result<()> {
         "ArmoryAtlas",
         Style::default().fg(Color::Green),
     ))
-        .block(title_block);
+    .block(title_block);
 
     f.render_widget(title, chunks[0]);
 
@@ -60,23 +58,24 @@ pub fn ui(f: &mut Frame<'_>, app: &App, data: Option<Table>) -> Result<()> {
     let current_keys_hint = {
         match app.current_screen {
             CurrentScreen::Main => Span::styled(
-                format!("(q) to quit / (esc) to enter settings / <-- (a) {}/{} (d) -->", app.current_page + 1, app.max_page),
+                format!(
+                    "(q) to quit / (esc) to enter settings / <-- (a) {}/{} (d) -->",
+                    app.current_page + 1,
+                    app.max_page
+                ),
                 Style::default().fg(Color::Red),
             ),
             CurrentScreen::Settings => Span::styled(
                 "(c) to edit the config / (q) to quit",
                 Style::default().fg(Color::Red),
             ),
-            CurrentScreen::Exit => Span::styled(
-                "(q) to quit",
-                Style::default().fg(Color::Red),
-            ),
-            CurrentScreen::Config => {Span::default()}
+            CurrentScreen::Exit => Span::styled("(q) to quit", Style::default().fg(Color::Red)),
+            CurrentScreen::Config => Span::default(),
         }
     };
 
-    let key_notes_footer = Paragraph::new(Line::from(current_keys_hint))
-        .block(Block::default().borders(Borders::ALL));
+    let key_notes_footer =
+        Paragraph::new(Line::from(current_keys_hint)).block(Block::default().borders(Borders::ALL));
 
     let footer_chunks = Layout::default()
         .direction(Direction::Horizontal)

@@ -6,7 +6,7 @@ use crate::cli::{GenerateArgs, GenerateSubCommands};
 use crate::items::insert_items;
 use crate::products::insert_products;
 use anyhow::Result;
-use ratatui::widgets::Table;
+
 use regex::Regex;
 use sqlx_mysql::MySqlPool;
 

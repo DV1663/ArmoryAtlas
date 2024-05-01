@@ -1,23 +1,25 @@
 use std::io;
 
+use crate::ItemProduct;
 use anyhow::Result;
-use crossterm::{event, execute};
 use crossterm::event::{DisableMouseCapture, EnableMouseCapture, Event, KeyCode};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
+use crossterm::terminal::{
+    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+};
+use crossterm::{event, execute};
+use log::info;
 use ratatui::layout::Constraint;
 use ratatui::prelude::{Backend, CrosstermBackend, Style};
-use ratatui::Terminal;
 use ratatui::widgets::{Block, Borders, Row, Table};
+use ratatui::Terminal;
 use sqlx_mysql::MySqlPool;
-use crate::ItemProduct;
 use std::sync::{Arc, Mutex};
-use log::info;
 
 use crate::tui::app::{App, CurrentScreen};
 use crate::tui::ui::ui;
 
-mod ui;
 mod app;
+mod ui;
 
 pub async fn run_tui(pool: MySqlPool) -> Result<()> {
     enable_raw_mode()?;
@@ -64,7 +66,9 @@ async fn fetch_data(app: &Arc<Mutex<App>>) -> Result<Vec<ItemProduct>> {
                     Products ON Items.ProductID = Products.ProductID
             ";
 
-    let items: Vec<ItemProduct> = sqlx::query_as::<_, ItemProduct>(query).fetch_all(&app.lock().unwrap().pool).await?;
+    let items: Vec<ItemProduct> = sqlx::query_as::<_, ItemProduct>(query)
+        .fetch_all(&app.lock().unwrap().pool)
+        .await?;
 
     Ok(items)
 }
@@ -73,15 +77,18 @@ fn get_data(app: &mut App, items: &Option<&[ItemProduct]>) -> Result<Table<'stat
     if app.current_screen == CurrentScreen::Main {
         let mut rows = Vec::new();
         if let Some(page) = items {
-            rows = page.iter().map(|i| {
-                Row::new(vec![
-                    i.item_id.to_string(),
-                    i.name_of_product.clone(),
-                    i.type_of_product.clone(),
-                    i.size.clone(),
-                    i.level_of_use.to_string(),
-                ])
-            }).collect();
+            rows = page
+                .iter()
+                .map(|i| {
+                    Row::new(vec![
+                        i.item_id.to_string(),
+                        i.name_of_product.clone(),
+                        i.type_of_product.clone(),
+                        i.size.clone(),
+                        i.level_of_use.to_string(),
+                    ])
+                })
+                .collect();
         }
 
         let widths = [
@@ -93,8 +100,10 @@ fn get_data(app: &mut App, items: &Option<&[ItemProduct]>) -> Result<Table<'stat
         ];
 
         let table = Table::new(rows, widths)
-            .header(Row::new(vec!["ID", "Product Name", "Type", "Size", "Level of Use"])
-                .style(Style::default().add_modifier(ratatui::style::Modifier::BOLD)))
+            .header(
+                Row::new(vec!["ID", "Product Name", "Type", "Size", "Level of Use"])
+                    .style(Style::default().add_modifier(ratatui::style::Modifier::BOLD)),
+            )
             .block(Block::default().title("Item Details").borders(Borders::ALL));
 
         Ok(table)
@@ -103,10 +112,7 @@ fn get_data(app: &mut App, items: &Option<&[ItemProduct]>) -> Result<Table<'stat
     }
 }
 
-async fn run_app<B: Backend>(
-    terminal: &mut Terminal<B>,
-    app: &mut App,
-) -> io::Result<bool> {
+async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<bool> {
     let app_clone = Arc::new(Mutex::new(app.clone()));
     let data = fetch_data(&app_clone).await.unwrap_or_else(|_| {
         eprintln!("Error fetching data");
@@ -121,7 +127,7 @@ async fn run_app<B: Backend>(
     loop {
         let table = match get_data(app, &Some(data_to_display)) {
             Ok(table) => Some(table),
-            Err(_) => None
+            Err(_) => None,
         };
 
         terminal.draw(|f| {
@@ -177,7 +183,7 @@ async fn run_app<B: Backend>(
                 _ => match key.code {
                     KeyCode::Char('q') => app.current_screen = CurrentScreen::Exit,
                     _ => {}
-                }
+                },
             }
         }
     }
