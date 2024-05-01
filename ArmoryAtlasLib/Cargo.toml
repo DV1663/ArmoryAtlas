@@ -6,6 +6,8 @@ edition = "2021"
 
 
 [dependencies]
+itertools = "0.12.1"
+uuid = "1.8.0"
 rayon = "1.10.0"
 anyhow = { version = "1.0.68", features = ["backtrace"] }
 config = { version = "0.14.0", features = ["toml"] }
@@ -15,7 +17,7 @@ clap = { version = "4.0.32", features = ["derive", "usage", "color", "help", "su
 serde = { version = "1.0.152", features = ["derive"] }
 serde_json = "1.0.91"
 toml = "0.8.12"
-sqlx = { version = "0.7.4", features = ["mysql", "macros", "sqlx-mysql", "json", "runtime-tokio", "tls-native-tls"] }
+sqlx = { version = "0.7.4", features = ["mysql", "macros", "sqlx-mysql", "json", "runtime-tokio", "tls-native-tls", "uuid"] }
 sqlx-mysql = { version = "0.7.4", features = ["serde"] }
 tokio = { version = "1.0.0", features = ["rt", "rt-multi-thread", "macros", "full"] }
 rpassword = "7.3.1"
@@ -23,3 +25,7 @@ rand = "0.8.5"
 regex = "1.10.4"
 crossterm = "0.27.0"
 ratatui = "0.26.2"
+
+log = "0.4.21"
+env_logger = "0.11.3"
+chrono = "0.4.38"

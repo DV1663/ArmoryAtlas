@@ -9,8 +9,46 @@ use armory_atlas_lib::{extract_sql, generate_test_data};
 use armory_atlas_lib::password_handler::get_db_pass;
 use armory_atlas_lib::tui::run_tui;
 
+use chrono::Local;
+use env_logger::{Builder, Env};
+use std::fs::File;
+use std::io::Write;
+
+pub fn setup_logger() -> Result<()> {
+    // Get the current timestamp
+    let now = Local::now();
+    // Format the timestamp as a string in the desired format
+    let timestamp = now.format("%Y-%m-%d_%H-%M-%S").to_string();
+    // Create the log filename with the timestamp
+    let log_filename = format!("logs/{}.log", timestamp);
+    // Create the log file and directory if needed
+    std::fs::create_dir_all("logs")?;
+
+    let file = File::create(log_filename)?;
+
+    Builder::from_env(Env::default().default_filter_or("info"))
+        .format(|buf, record| {
+            writeln!(
+                buf,
+                "[{} {} - {}:{}] {}",
+                Local::now().format("%Y-%m-%d %H:%M:%S"),
+                record.level(),
+                record
+                    .file()
+                    .unwrap_or(record.module_path().unwrap_or("unknown")),
+                record.line().unwrap_or(0),
+                record.args()
+            )
+        })
+        .target(env_logger::Target::Pipe(Box::new(file)))
+        .init();
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
+    setup_logger()?;
+    
     let cmd = Command::parse();
     let config = get_config()?;
 
@@ -55,7 +93,25 @@ async fn main() -> Result<()> {
             let pool =
                 MySqlPool::connect(format!("mysql://{user}:{password}@{host}/{database}").as_str())
                     .await?;
-            run_tui(pool)?;
+
+            /*let query = "
+                SELECT
+                    Items.ItemID AS item_id,
+                    Products.NameOfProduct AS name_of_product,
+                    Products.Type AS type_of_product,
+                    Items.Size AS size,
+                    Items.LevelOfUse AS level_of_use
+                FROM
+                    Items
+                INNER JOIN
+                    Products ON Items.ProductID = Products.ProductID
+            ";
+
+            let items: Vec<ItemProduct> = sqlx::query_as::<_, ItemProduct>(query).fetch_all(&pool).await?;
+            
+            println!("{:?}", items[0]);
+*/
+            run_tui(pool).await?;
         }
     };
 

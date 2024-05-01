@@ -1,12 +1,12 @@
-use std::cmp::PartialEq;
-use ratatui::widgets::Block;
+use anyhow::Result;
 use ratatui::Frame;
 use ratatui::prelude::{Color,
-Constraint, Direction, Layout, Line, Rect, Span, Style, Text};
-use ratatui::widgets::{Borders, ListItem, Paragraph, Row, Table};
-use crate::ItemProduct;
+                       Constraint, Direction, Layout, Line, Rect, Span, Style, Text};
+use ratatui::widgets::{Borders, Paragraph, Table};
+use ratatui::widgets::Block;
+
+
 use crate::tui::app::{App, CurrentScreen};
-use anyhow::Result;
 
 /// helper function to create a centered rect using up certain percentage of the available rect `r`
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
@@ -31,13 +31,7 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
         .split(popup_layout[1])[1] // Return the middle chunk
 }
 
-impl PartialEq for CurrentScreen {
-    fn eq(&self, other: &Self) -> bool {
-        todo!()
-    }
-}
-
-pub async fn ui(f: &mut Frame<'_>, app: &App) -> Result<()> {
+pub fn ui(f: &mut Frame<'_>, app: &App, data: Option<Table>) -> Result<()> {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -59,50 +53,14 @@ pub async fn ui(f: &mut Frame<'_>, app: &App) -> Result<()> {
 
     f.render_widget(title, chunks[0]);
 
-    if app.current_screen == CurrentScreen::Main {
-        let query = "
-            SELECT Items.ItemID as item_id,
-                   Products.NameOfProduct as name_of_product,
-                   Products.Type as type_of_product,
-                   Items.Size as size,
-                   Items.LevelOfUse as level_of_use
-            FROM Items
-            INNER JOIN Products ON Items.ProductID = Products.ProductID
-            LIMIT 10
-        ";
-
-        let items: Vec<ItemProduct> = sqlx::query_as::<_, ItemProduct>(query).fetch_all(&app.pool).await?;
-
-        let rows: Vec<_> = items.iter().map(|i| {
-            Row::new(vec![
-                i.item_id.to_string(),
-                i.name_of_product.clone(),
-                i.type_of_product.clone(),
-                i.size.clone(),
-                i.level_of_use.clone(),
-            ])
-        }).collect();
-
-        let widths = [
-            Constraint::Percentage(10),
-            Constraint::Percentage(30),
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
-            Constraint::Percentage(20),
-        ];
-
-        let table = Table::new(rows, widths)
-            .header(Row::new(vec!["ID", "Product Name", "Type", "Size", "Level of Use"])
-                .style(Style::default().add_modifier(ratatui::style::Modifier::BOLD)))
-            .block(Block::default().title("Item Details").borders(Borders::ALL));
-
-        f.render_widget(table, chunks[1]);
+    if let Some(new_data) = data {
+        f.render_widget(new_data, chunks[1]);
     }
 
     let current_keys_hint = {
         match app.current_screen {
             CurrentScreen::Main => Span::styled(
-                "(q) to quit / (esc) to enter settings / () to switch to previous page / () to switch to next page",
+                format!("(q) to quit / (esc) to enter settings / <-- (a) {}/{} (d) -->", app.current_page + 1, app.max_page),
                 Style::default().fg(Color::Red),
             ),
             CurrentScreen::Settings => Span::styled(

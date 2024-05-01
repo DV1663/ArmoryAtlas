@@ -20,14 +20,15 @@ pub mod tui;
 pub const CONFIG_FILE: &str = ".config/armoryatlas/config.toml";
 
 use sqlx::FromRow;
+use uuid::Uuid;
 
-#[derive(Debug, FromRow)]
-struct ItemProduct {
-    item_id: i32,
+#[derive(Debug, FromRow, Clone)]
+pub struct ItemProduct {
+    item_id: Uuid,
     name_of_product: String,
     type_of_product: String,
     size: String,
-    level_of_use: String,
+    level_of_use: f32,
 }
 
 pub async fn generate_test_data(args: GenerateArgs, pool: &MySqlPool) -> Result<()> {
