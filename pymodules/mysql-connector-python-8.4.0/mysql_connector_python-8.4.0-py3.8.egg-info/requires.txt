@@ -1,0 +1,14 @@
+
+[dns-srv]
+dnspython<=2.3.0,>=1.16.0
+
+[fido2]
+fido2==1.1.2
+
+[gssapi]
+gssapi<=1.8.2,>=1.6.9
+
+[opentelemetry]
+Deprecated>=1.2.6
+typing-extensions>=3.7.4
+zipp>=0.5

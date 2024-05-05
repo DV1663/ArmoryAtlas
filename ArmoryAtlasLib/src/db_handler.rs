@@ -1,30 +1,43 @@
 use pyo3::prelude::*;
 use crate::DATABASE_HANDLER;
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+use crate::db_handler::ArmoryAtlasDBHandler::DBHandler;
 
-pub struct DBHandler {
-    pool: PyObject
+pub struct DBHandlerMaster {
+    pool: PyObject,
 }
 
-impl DBHandler {
+#[derive(FromPyObject, Debug)]
+#[pyclass]
+struct Test {
+    id: String,
+    name: String,
+    test_type: String,
+    quantity: usize,
+    size: String
+}
+
+
+
+impl DBHandlerMaster {
     pub fn new() -> anyhow::Result<Self> {
-        let pool = DBHandler::get_db_handler_obj()?;
+        let pool = DBHandlerMaster::get_db_handler_obj()?;
         Ok(Self {
-            pool
+            pool,
         })
     }
     
-    pub fn get_items(&self) -> anyhow::Result<Vec<(i32, String, String, i32, String)>> {
+    pub fn get_items(&self) -> anyhow::Result<Vec<(String, String, String, usize, String)>> {
         Python::with_gil(|py| {
-            
             let items = self.pool.call_method0(py, "get_items")?;
-            let items: Vec<(i32, String, String, i32, String)> = items.extract(py)?;
+            let items: Vec<(String, String, String, usize, String)> = items.extract(py)?;
             Ok(items)
         })
     }
 
     pub fn get_db_handler_obj() -> anyhow::Result<PyObject> {
         Python::with_gil(|py| {
-            let module = PyModule::from_code_bound(py, DATABASE_HANDLER, "ArmoryAtlasDBHandler.py", "ArmoryAtlasDBHandler")?;
+            let module = PyModule::from_code(py, DATABASE_HANDLER, "ArmoryAtlasDBHandler.py", "ArmoryAtlasDBHandler")?;
             
             let db_handler = module.getattr("DBHandler")?;
             let db = db_handler.call0()?.to_object(py);
@@ -39,7 +52,7 @@ mod tests {
 
     #[test]
     fn test_get_db_handler_obj() {
-        let db_handler = DBHandler::get_db_handler_obj();
+        let db_handler = DBHandlerMaster::get_db_handler_obj();
         match db_handler { 
             Ok(_) => assert!(true),
             Err(e) => assert!(false, "{:?}", e)
@@ -48,14 +61,17 @@ mod tests {
     
     #[test]
     fn test_get_items() {
-        let db_handler = DBHandler::new();
+        let db_handler = DBHandlerMaster::new();
         assert!(db_handler.is_ok());
 
         let db_handler = db_handler.unwrap();
         let items = db_handler.get_items();
-        assert!(items.is_ok());
-
-        let items = items.unwrap();
-        dbg!(items);
+        match items { 
+            Ok(items) => {
+                assert!(true);
+                dbg!(items);
+            },
+            Err(e) => assert!(false, "{:?}", e)
+        }
     }
 }

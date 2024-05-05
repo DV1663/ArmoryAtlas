@@ -1,0 +1,40 @@
+[2024-05-05 08:54:27 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:382] perform;
+[2024-05-05 08:54:27 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:935] write_command; command=Auth(Some(External), Some([49, 48, 48, 48]))
+[2024-05-05 08:54:27 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:953] read_command;
+[2024-05-05 08:54:27 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:935] write_command; command=NegotiateUnixFD
+[2024-05-05 08:54:27 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:953] read_command;
+[2024-05-05 08:54:27 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:935] write_command; command=Begin
+[2024-05-05 08:54:27 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/socket_reader.rs:33] socket reader;
+[2024-05-05 08:54:40 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:382] perform;
+[2024-05-05 08:54:40 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:935] write_command; command=Auth(Some(External), Some([49, 48, 48, 48]))
+[2024-05-05 08:54:40 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:953] read_command;
+[2024-05-05 08:54:40 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:935] write_command; command=NegotiateUnixFD
+[2024-05-05 08:54:40 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:953] read_command;
+[2024-05-05 08:54:40 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:935] write_command; command=Begin
+[2024-05-05 08:54:40 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/socket_reader.rs:33] socket reader;
+[2024-05-05 08:54:40 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:382] perform;
+[2024-05-05 08:54:40 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:935] write_command; command=Auth(Some(External), Some([49, 48, 48, 48]))
+[2024-05-05 08:54:40 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:953] read_command;
+[2024-05-05 08:54:40 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:935] write_command; command=NegotiateUnixFD
+[2024-05-05 08:54:40 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:953] read_command;
+[2024-05-05 08:54:40 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:935] write_command; command=Begin
+[2024-05-05 08:54:40 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/socket_reader.rs:33] socket reader;
+[2024-05-05 08:54:55 INFO - ArmoryAtlasLib/src/tui/mod.rs:195] moving to next page
+[2024-05-05 08:54:55 INFO - ArmoryAtlasLib/src/tui/mod.rs:197] new page: 1
+[2024-05-05 08:54:55 INFO - ArmoryAtlasLib/src/tui/mod.rs:195] moving to next page
+[2024-05-05 08:54:55 INFO - ArmoryAtlasLib/src/tui/mod.rs:197] new page: 2
+[2024-05-05 08:54:55 INFO - ArmoryAtlasLib/src/tui/mod.rs:184] Moving to prev page!
+[2024-05-05 08:54:55 INFO - ArmoryAtlasLib/src/tui/mod.rs:187] new page: 1
+[2024-05-05 08:54:56 INFO - ArmoryAtlasLib/src/tui/mod.rs:184] Moving to prev page!
+[2024-05-05 08:54:56 INFO - ArmoryAtlasLib/src/tui/mod.rs:187] new page: 0
+[2024-05-05 08:54:56 INFO - ArmoryAtlasLib/src/tui/mod.rs:184] Moving to prev page!
+[2024-05-05 08:54:56 INFO - ArmoryAtlasLib/src/tui/mod.rs:195] moving to next page
+[2024-05-05 08:54:56 INFO - ArmoryAtlasLib/src/tui/mod.rs:197] new page: 0
+[2024-05-05 08:54:59 INFO - ArmoryAtlasLib/src/tui/mod.rs:195] moving to next page
+[2024-05-05 08:54:59 INFO - ArmoryAtlasLib/src/tui/mod.rs:197] new page: 1
+[2024-05-05 08:54:59 INFO - ArmoryAtlasLib/src/tui/mod.rs:195] moving to next page
+[2024-05-05 08:54:59 INFO - ArmoryAtlasLib/src/tui/mod.rs:197] new page: 2
+[2024-05-05 08:55:00 INFO - ArmoryAtlasLib/src/tui/mod.rs:184] Moving to prev page!
+[2024-05-05 08:55:00 INFO - ArmoryAtlasLib/src/tui/mod.rs:187] new page: 1
+[2024-05-05 08:55:00 INFO - ArmoryAtlasLib/src/tui/mod.rs:184] Moving to prev page!
+[2024-05-05 08:55:00 INFO - ArmoryAtlasLib/src/tui/mod.rs:187] new page: 0
