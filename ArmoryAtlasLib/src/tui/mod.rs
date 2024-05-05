@@ -1,25 +1,28 @@
 use std::io;
 
-use crate::ItemProduct;
+use crate::{ItemProduct, search_items};
 use anyhow::Result;
 use crossterm::event::{DisableMouseCapture, EnableMouseCapture, Event, KeyCode};
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
 use crossterm::{event, execute};
-use log::info;
+use log::{error, info};
 use ratatui::layout::Constraint;
 use ratatui::prelude::{Backend, CrosstermBackend, Style};
 use ratatui::widgets::{Block, Borders, Row, Table};
 use ratatui::Terminal;
 use sqlx_mysql::MySqlPool;
 use std::sync::{Arc, Mutex};
+use tui_textarea::{TextArea, Input, Key};
 
 use crate::tui::app::{App, CurrentScreen};
+use crate::tui::key_events::screen_key_events;
 use crate::tui::ui::ui;
 
 mod app;
 mod ui;
+mod key_events;
 
 pub async fn run_tui(pool: MySqlPool) -> Result<()> {
     enable_raw_mode()?;
@@ -54,16 +57,20 @@ pub async fn run_tui(pool: MySqlPool) -> Result<()> {
 
 async fn fetch_data(app: &Arc<Mutex<App>>) -> Result<Vec<ItemProduct>> {
     let query = "
-                SELECT
-                    Items.ItemID AS item_id,
-                    Products.NameOfProduct AS name_of_product,
-                    Products.Type AS type_of_product,
-                    Items.Size AS size,
-                    Items.LevelOfUse AS level_of_use
-                FROM
-                    Items
-                INNER JOIN
-                    Products ON Items.ProductID = Products.ProductID
+            SELECT
+                i.ProductID as product_id,
+                p.NameOfProduct AS product_name,
+                p.Type AS product_type,
+                i.Quantity as quantity,
+                i.Size AS size
+            FROM
+                Products p
+                    JOIN
+                (SELECT ProductID, Size, count(*) as Quantity from Items group by ProductID, Size)
+                    AS
+                    i ON p.ProductID = i.ProductID
+            WHERE
+                i.Quantity > 0;
             ";
 
     let items: Vec<ItemProduct> = sqlx::query_as::<_, ItemProduct>(query)
@@ -73,7 +80,7 @@ async fn fetch_data(app: &Arc<Mutex<App>>) -> Result<Vec<ItemProduct>> {
     Ok(items)
 }
 
-fn get_data(app: &mut App, items: &Option<&[ItemProduct]>) -> Result<Table<'static>> {
+fn get_data(app: &mut App, items: &Option<Vec<ItemProduct>>) -> Result<Table<'static>> {
     if app.current_screen == CurrentScreen::Main {
         let mut rows = Vec::new();
         if let Some(page) = items {
@@ -81,11 +88,11 @@ fn get_data(app: &mut App, items: &Option<&[ItemProduct]>) -> Result<Table<'stat
                 .iter()
                 .map(|i| {
                     Row::new(vec![
-                        i.item_id.to_string(),
-                        i.name_of_product.clone(),
-                        i.type_of_product.clone(),
+                        i.product_id.clone(),
+                        i.product_name.clone(),
+                        i.product_type.clone(),
+                        i.quantity.to_string(),
                         i.size.clone(),
-                        i.level_of_use.to_string(),
                     ])
                 })
                 .collect();
@@ -101,10 +108,10 @@ fn get_data(app: &mut App, items: &Option<&[ItemProduct]>) -> Result<Table<'stat
 
         let table = Table::new(rows, widths)
             .header(
-                Row::new(vec!["ID", "Product Name", "Type", "Size", "Level of Use"])
+                Row::new(vec!["Product ID", "Product Name", "Product Type", "Quantity", "Size"])
                     .style(Style::default().add_modifier(ratatui::style::Modifier::BOLD)),
             )
-            .block(Block::default().title("Item Details").borders(Borders::ALL));
+            .block(Block::default().title("Items in Storage").borders(Borders::ALL));
 
         Ok(table)
     } else {
@@ -120,70 +127,66 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::R
     });
 
     // Store the iterator and its values in variables
-    let data_iterator: Vec<&[ItemProduct]> = data.chunks(15).collect();
+    let data_iterator: Vec<Vec<ItemProduct>> = data.chunks(15).map(|chunk| chunk.to_vec()).collect();
     app.max_page = data_iterator.len();
-    let mut data_to_display = data_iterator[0];
+    let mut data_to_display = data_iterator[0].clone();
+    let mut search_box = TextArea::default();
+    search_box.set_cursor_line_style(Style::default());
+    search_box.set_placeholder_text("Item name or ID to Search for");
 
     loop {
-        let table = match get_data(app, &Some(data_to_display)) {
+        let table = match get_data(app, &Some(data_to_display.clone())) {
             Ok(table) => Some(table),
             Err(_) => None,
         };
 
         terminal.draw(|f| {
-            ui(f, app, table).expect("Error rendering the UI");
+            ui(f, app, table, &mut search_box).expect("Error rendering the UI");
         })?;
 
         if let Event::Key(key) = event::read()? {
+            match key.into() {
+                Input {key: Key::Enter, ..} => {
+                    if app.current_screen == CurrentScreen::Main {
+                        // search for the item either via name or id
+                        let query = search_box.lines()[0]
+                            .trim()
+                            .to_string()
+                            .replace(" ", "%");
+                        if query.is_empty() {
+                            data_to_display = data_iterator[app.current_page].clone();
+                            continue;
+                        }
+                        // search database and displat the result
+                        let search_result = search_items(&app.pool, &query).await;
+                        match search_result {
+                            Ok(items) => {
+                                data_to_display = items.clone();
+                            }
+                            Err(e) => {
+                                error!("{:?}", e)
+                            }
+                        }
+
+                    }
+                }
+                input => {
+                    if app.current_screen == CurrentScreen::Main {
+                        search_box.input(input);
+                    }
+                }
+            }
+
             if key.kind == event::KeyEventKind::Release {
                 // Skip events that are not KeyEventKind::Press
                 continue;
             }
-            match app.current_screen {
-                CurrentScreen::Main => match key.code {
-                    KeyCode::Esc => {
-                        app.current_screen = CurrentScreen::Settings;
-                    }
-                    KeyCode::Char('q') => {
-                        app.current_screen = CurrentScreen::Exit;
-                    }
-                    KeyCode::Char('a') => {
-                        info!("Moving to prev page!");
-                        if app.current_page > 0 {
-                            app.current_page = (app.current_page - 1) % app.max_page;
-                            info!("new page: {}", app.current_page);
-                            data_to_display = data_iterator[app.current_page];
-                        } else {
-                            app.current_page = app.max_page;
-                            data_to_display = data_iterator[app.current_page];
-                        }
-                    }
-                    KeyCode::Char('d') => {
-                        info!("moving to next page");
-                        app.current_page = (app.current_page + 1) % app.max_page;
-                        info!("new page: {}", app.current_page);
-                        data_to_display = data_iterator[app.current_page];
-                    }
-                    _ => {}
-                },
-                CurrentScreen::Exit => match key.code {
-                    KeyCode::Char('y') => {
-                        return Ok(true);
-                    }
-                    KeyCode::Char('n') | KeyCode::Char('q') => {
-                        return Ok(false);
-                    }
-                    _ => {}
-                },
-                CurrentScreen::Settings => match key.code {
-                    KeyCode::Char('c') => app.current_screen = CurrentScreen::Config,
-                    KeyCode::Char('q') => app.current_screen = CurrentScreen::Exit,
-                    _ => {}
-                },
-                _ => match key.code {
-                    KeyCode::Char('q') => app.current_screen = CurrentScreen::Exit,
-                    _ => {}
-                },
+            
+            let (should_exit, new_data_to_display) = screen_key_events(app, key, &data_iterator, data_to_display);
+            data_to_display = new_data_to_display;
+            
+            if should_exit {
+                return Ok(false);
             }
         }
     }
