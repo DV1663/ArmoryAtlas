@@ -2,7 +2,6 @@ import os
 
 import mysql.connector
 import toml
-import keyring
 
 
 class DBHandler:

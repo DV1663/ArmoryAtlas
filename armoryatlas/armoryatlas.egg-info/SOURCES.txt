@@ -1,6 +1,0 @@
-setup.py
-armoryatlas.egg-info/PKG-INFO
-armoryatlas.egg-info/SOURCES.txt
-armoryatlas.egg-info/dependency_links.txt
-armoryatlas.egg-info/requires.txt
-armoryatlas.egg-info/top_level.txt

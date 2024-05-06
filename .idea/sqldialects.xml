@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="SqlDialectMappings">
-    <file url="file://$PROJECT_DIR$/ArmoryAtlasLib/ArmoryAtlasDBHandler.py" dialect="GenericSQL" />
     <file url="file://$PROJECT_DIR$/SQL/Drop.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/SQL/Tables.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/SQL/setup.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/armory_atlas/ArmoryAtlasDBHandler.py" dialect="GenericSQL" />
     <file url="PROJECT" dialect="MySQL" />
   </component>
 </project>

@@ -1,23 +1,9 @@
 use pyo3::prelude::*;
 use crate::DATABASE_HANDLER;
-include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
-use crate::db_handler::ArmoryAtlasDBHandler::DBHandler;
 
 pub struct DBHandlerMaster {
     pool: PyObject,
 }
-
-#[derive(FromPyObject, Debug)]
-#[pyclass]
-struct Test {
-    id: String,
-    name: String,
-    test_type: String,
-    quantity: usize,
-    size: String
-}
-
-
 
 impl DBHandlerMaster {
     pub fn new() -> anyhow::Result<Self> {
@@ -38,7 +24,6 @@ impl DBHandlerMaster {
     pub fn get_db_handler_obj() -> anyhow::Result<PyObject> {
         Python::with_gil(|py| {
             let module = PyModule::from_code(py, DATABASE_HANDLER, "ArmoryAtlasDBHandler.py", "ArmoryAtlasDBHandler")?;
-            
             let db_handler = module.getattr("DBHandler")?;
             let db = db_handler.call0()?.to_object(py);
             Ok(db)

@@ -1,7 +1,0 @@
-[2024-05-05 08:53:05 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:382] perform;
-[2024-05-05 08:53:05 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:935] write_command; command=Auth(Some(External), Some([49, 48, 48, 48]))
-[2024-05-05 08:53:05 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:953] read_command;
-[2024-05-05 08:53:05 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:935] write_command; command=NegotiateUnixFD
-[2024-05-05 08:53:05 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:953] read_command;
-[2024-05-05 08:53:05 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/handshake.rs:935] write_command; command=Begin
-[2024-05-05 08:53:05 INFO - /home/tosic-killer/.cargo/registry/src/index.crates.io-6f17d22bba15001f/zbus-3.15.2/src/socket_reader.rs:33] socket reader;

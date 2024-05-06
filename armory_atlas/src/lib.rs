@@ -1,5 +1,3 @@
-#![feature(async_closure)]
-
 use std::fs;
 
 use crate::cli::{GenerateArgs, GenerateSubCommands};
