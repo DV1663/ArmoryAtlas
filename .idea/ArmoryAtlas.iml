@@ -23,6 +23,7 @@
       <sourceFolder url="file://$MODULE_DIR$/pymodules/toml-0.10.2" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/pymodules/zipp-3.18.1" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/armory_atlas/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/armory_atlas/ArmoryAtlasDBHandler.py" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/app/target" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/ArmoryAtlasTUI/target" />

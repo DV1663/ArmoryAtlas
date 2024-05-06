@@ -57,7 +57,8 @@ class DBHandler:
 
         self.cursor.execute(query)
         items = self.cursor.fetchall()
-        return items
+        item_list = [ItemProduct(*item) for item in items]
+        return item_list
 
     @staticmethod
     def get_config() -> dict:
@@ -70,6 +71,15 @@ class DBHandler:
         with open(config_path, "r") as f:
             config = toml.load(f)
         return config
+
+
+class ItemProduct:
+    def __init__(self, product_id, product_name, product_type, quantity, size):
+        self.product_id = product_id
+        self.product_name = product_name
+        self.product_type = product_type
+        self.quantity = quantity
+        self.size = size
 
 
 if __name__ == "__main__":

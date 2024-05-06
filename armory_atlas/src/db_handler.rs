@@ -1,4 +1,4 @@
-use crate::DATABASE_HANDLER;
+use crate::{DATABASE_HANDLER, ItemProduct};
 use pyo3::prelude::*;
 
 pub struct DBHandlerMaster {
@@ -11,10 +11,10 @@ impl DBHandlerMaster {
         Ok(Self { pool })
     }
 
-    pub fn get_items(&self) -> anyhow::Result<Vec<(String, String, String, usize, String)>> {
+    pub fn get_items(&self) -> anyhow::Result<Vec<ItemProduct>> {
         Python::with_gil(|py| {
             let items = self.pool.call_method0(py, "get_items")?;
-            let items: Vec<(String, String, String, usize, String)> = items.extract(py)?;
+            let items: Vec<ItemProduct> = items.extract(py)?;
             Ok(items)
         })
     }
@@ -36,6 +36,7 @@ impl DBHandlerMaster {
 
 #[cfg(test)]
 mod tests {
+    use crate::ArmoryAtlasDBHandler::DBHandler;
     use super::*;
 
     #[test]
@@ -54,12 +55,22 @@ mod tests {
 
         let db_handler = db_handler.unwrap();
         let items = db_handler.get_items();
-        match items {
-            Ok(items) => {
-                assert!(true);
-                dbg!(items);
+        assert!(items.is_ok());
+    }
+    
+    #[test]
+    fn test_bindgen_obj() -> anyhow::Result<()> {
+        Python::with_gil(|py| {
+            if let Err(e) = DBHandler::new(py) {
+                assert!(false, "{:?}", e);
             }
-            Err(e) => assert!(false, "{:?}", e),
-        }
+            
+            let mut handler = DBHandler::new(py).unwrap();
+            
+            let items = handler.get_items(py);
+            assert!(items.is_ok());
+        });
+        
+        Ok(())
     }
 }

@@ -4,9 +4,11 @@ use crate::cli::{GenerateArgs, GenerateSubCommands};
 use crate::items::insert_items;
 use crate::products::insert_products;
 use anyhow::Result;
+use pyo3::FromPyObject;
 
 use regex::Regex;
 use sqlx_mysql::MySqlPool;
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 pub mod cli;
 pub mod config;
@@ -22,25 +24,17 @@ pub const DATABASE_HANDLER: &str = include_str!("../ArmoryAtlasDBHandler.py");
 use sqlx::FromRow;
 use uuid::Uuid;
 
-#[derive(Debug, FromRow, Clone)]
-pub struct ItemProductTest {
-    item_id: Uuid,
-    name_of_product: String,
-    type_of_product: String,
-    size: String,
-    level_of_use: f32,
-}
-
-#[derive(Debug, FromRow, Clone)]
+#[derive(Debug, FromRow, Clone, FromPyObject)]
 pub struct ItemProduct {
+    #[pyo3()]
     product_id: String,
     product_name: String,
     product_type: String,
-    size: String,
     quantity: i64,
+    size: String,
 }
 
-pub async fn search_items(pool: &MySqlPool, query: &str) -> Result<Vec<ItemProduct>> {
+pub async fn search_items(pool: &MySqlPool, search_param: &str) -> Result<Vec<ItemProduct>> {
     let query = format!(
         "
         SELECT
@@ -59,9 +53,9 @@ pub async fn search_items(pool: &MySqlPool, query: &str) -> Result<Vec<ItemProdu
             i.Quantity > 0
             AND
             (
-                p.NameOfProduct LIKE '%{query}%' OR
-                p.Type LIKE '%{query}%' OR
-                i.Size LIKE '%{query}%'
+                p.NameOfProduct LIKE '%{search_param}%' OR
+                p.Type LIKE '%{search_param}%' OR
+                i.Size LIKE '%{search_param}%'
             )
         ORDER BY
             p.NameOfProduct
