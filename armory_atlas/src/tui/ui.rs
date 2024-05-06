@@ -30,7 +30,12 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
         .split(popup_layout[1])[1] // Return the middle chunk
 }
 
-pub fn ui(f: &mut Frame<'_>, app: &App, main_page_data: Option<Table>, search_box: &mut TextArea) -> Result<()> {
+pub fn ui(
+    f: &mut Frame<'_>,
+    app: &App,
+    main_page_data: Option<Table>,
+    search_box: &mut TextArea,
+) -> Result<()> {
     let main_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -70,12 +75,9 @@ pub fn ui(f: &mut Frame<'_>, app: &App, main_page_data: Option<Table>, search_bo
             if let Some(new_data) = main_page_data {
                 f.render_widget(new_data, content_layout[1]);
             }
-
         }
-        _ => {  },
+        _ => {}
     }
-
-
 
     let current_keys_hint = {
         match app.current_screen {
@@ -91,7 +93,10 @@ pub fn ui(f: &mut Frame<'_>, app: &App, main_page_data: Option<Table>, search_bo
                 "(c) to edit the config / (q) to quit",
                 Style::default().fg(Color::Red),
             ),
-            CurrentScreen::Exit => Span::styled("(y) to quit / (n) to go back", Style::default().fg(Color::Red)),
+            CurrentScreen::Exit => Span::styled(
+                "(y) to quit / (n) to go back",
+                Style::default().fg(Color::Red),
+            ),
             CurrentScreen::Config => Span::default(),
         }
     };

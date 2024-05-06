@@ -4,20 +4,20 @@ use crate::cli::{GenerateArgs, GenerateSubCommands};
 use crate::items::insert_items;
 use crate::products::insert_products;
 use anyhow::Result;
-use pyo3::Python;
 use pyo3::types::PyModule;
+use pyo3::Python;
 
+use pyo3::prelude::*;
 use regex::Regex;
 use sqlx_mysql::MySqlPool;
-use pyo3::prelude::*;
 
 pub mod cli;
 pub mod config;
+pub mod db_handler;
 pub mod items;
 pub mod password_handler;
 pub mod products;
 pub mod tui;
-pub mod db_handler;
 
 pub const CONFIG_FILE: &str = ".config/armoryatlas/config.toml";
 pub const DATABASE_HANDLER: &str = include_str!("../ArmoryAtlasDBHandler.py");
@@ -44,7 +44,8 @@ pub struct ItemProduct {
 }
 
 pub async fn search_items(pool: &MySqlPool, query: &str) -> Result<Vec<ItemProduct>> {
-    let query = format!("
+    let query = format!(
+        "
         SELECT
             i.ProductID as product_id,
             p.NameOfProduct AS product_name,
@@ -67,12 +68,13 @@ pub async fn search_items(pool: &MySqlPool, query: &str) -> Result<Vec<ItemProdu
             )
         ORDER BY
             p.NameOfProduct
-    ");
+    "
+    );
 
     let items: Vec<ItemProduct> = sqlx::query_as::<_, ItemProduct>(query.as_str())
         .fetch_all(pool)
         .await?;
-    
+
     Ok(items)
 }
 
@@ -107,5 +109,3 @@ pub fn extract_sql(file_name: &str) -> Result<Vec<String>> {
 
     Ok(res)
 }
-
-

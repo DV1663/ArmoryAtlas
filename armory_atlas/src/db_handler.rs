@@ -1,5 +1,5 @@
-use pyo3::prelude::*;
 use crate::DATABASE_HANDLER;
+use pyo3::prelude::*;
 
 pub struct DBHandlerMaster {
     pool: PyObject,
@@ -8,11 +8,9 @@ pub struct DBHandlerMaster {
 impl DBHandlerMaster {
     pub fn new() -> anyhow::Result<Self> {
         let pool = DBHandlerMaster::get_db_handler_obj()?;
-        Ok(Self {
-            pool,
-        })
+        Ok(Self { pool })
     }
-    
+
     pub fn get_items(&self) -> anyhow::Result<Vec<(String, String, String, usize, String)>> {
         Python::with_gil(|py| {
             let items = self.pool.call_method0(py, "get_items")?;
@@ -23,7 +21,12 @@ impl DBHandlerMaster {
 
     pub fn get_db_handler_obj() -> anyhow::Result<PyObject> {
         Python::with_gil(|py| {
-            let module = PyModule::from_code(py, DATABASE_HANDLER, "ArmoryAtlasDBHandler.py", "ArmoryAtlasDBHandler")?;
+            let module = PyModule::from_code(
+                py,
+                DATABASE_HANDLER,
+                "ArmoryAtlasDBHandler.py",
+                "ArmoryAtlasDBHandler",
+            )?;
             let db_handler = module.getattr("DBHandler")?;
             let db = db_handler.call0()?.to_object(py);
             Ok(db)
@@ -38,12 +41,12 @@ mod tests {
     #[test]
     fn test_get_db_handler_obj() {
         let db_handler = DBHandlerMaster::get_db_handler_obj();
-        match db_handler { 
+        match db_handler {
             Ok(_) => assert!(true),
-            Err(e) => assert!(false, "{:?}", e)
+            Err(e) => assert!(false, "{:?}", e),
         }
     }
-    
+
     #[test]
     fn test_get_items() {
         let db_handler = DBHandlerMaster::new();
@@ -51,12 +54,12 @@ mod tests {
 
         let db_handler = db_handler.unwrap();
         let items = db_handler.get_items();
-        match items { 
+        match items {
             Ok(items) => {
                 assert!(true);
                 dbg!(items);
-            },
-            Err(e) => assert!(false, "{:?}", e)
+            }
+            Err(e) => assert!(false, "{:?}", e),
         }
     }
 }

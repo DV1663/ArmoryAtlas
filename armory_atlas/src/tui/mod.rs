@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::{ItemProduct, search_items};
+use crate::{search_items, ItemProduct};
 use anyhow::Result;
 use crossterm::event::{DisableMouseCapture, EnableMouseCapture, Event, KeyCode};
 use crossterm::terminal::{
@@ -14,15 +14,15 @@ use ratatui::widgets::{Block, Borders, Row, Table};
 use ratatui::Terminal;
 use sqlx_mysql::MySqlPool;
 use std::sync::{Arc, Mutex};
-use tui_textarea::{TextArea, Input, Key};
+use tui_textarea::{Input, Key, TextArea};
 
 use crate::tui::app::{App, CurrentScreen};
 use crate::tui::key_events::screen_key_events;
 use crate::tui::ui::ui;
 
 mod app;
-mod ui;
 mod key_events;
+mod ui;
 
 pub async fn run_tui(pool: MySqlPool) -> Result<()> {
     enable_raw_mode()?;
@@ -108,10 +108,20 @@ fn get_data(app: &mut App, items: &Option<Vec<ItemProduct>>) -> Result<Table<'st
 
         let table = Table::new(rows, widths)
             .header(
-                Row::new(vec!["Product ID", "Product Name", "Product Type", "Quantity", "Size"])
-                    .style(Style::default().add_modifier(ratatui::style::Modifier::BOLD)),
+                Row::new(vec![
+                    "Product ID",
+                    "Product Name",
+                    "Product Type",
+                    "Quantity",
+                    "Size",
+                ])
+                .style(Style::default().add_modifier(ratatui::style::Modifier::BOLD)),
             )
-            .block(Block::default().title("Items in Storage").borders(Borders::ALL));
+            .block(
+                Block::default()
+                    .title("Items in Storage")
+                    .borders(Borders::ALL),
+            );
 
         Ok(table)
     } else {
@@ -127,7 +137,8 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::R
     });
 
     // Store the iterator and its values in variables
-    let data_iterator: Vec<Vec<ItemProduct>> = data.chunks(15).map(|chunk| chunk.to_vec()).collect();
+    let data_iterator: Vec<Vec<ItemProduct>> =
+        data.chunks(15).map(|chunk| chunk.to_vec()).collect();
     app.max_page = data_iterator.len();
     let mut data_to_display = data_iterator[0].clone();
     let mut search_box = TextArea::default();
@@ -146,13 +157,12 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::R
 
         if let Event::Key(key) = event::read()? {
             match key.into() {
-                Input {key: Key::Enter, ..} => {
+                Input {
+                    key: Key::Enter, ..
+                } => {
                     if app.current_screen == CurrentScreen::Main {
                         // search for the item either via name or id
-                        let query = search_box.lines()[0]
-                            .trim()
-                            .to_string()
-                            .replace(" ", "%");
+                        let query = search_box.lines()[0].trim().to_string().replace(" ", "%");
                         if query.is_empty() {
                             data_to_display = data_iterator[app.current_page].clone();
                             continue;
@@ -167,7 +177,6 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::R
                                 error!("{:?}", e)
                             }
                         }
-
                     }
                 }
                 input => {
@@ -181,10 +190,11 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::R
                 // Skip events that are not KeyEventKind::Press
                 continue;
             }
-            
-            let (should_exit, new_data_to_display) = screen_key_events(app, key, &data_iterator, data_to_display);
+
+            let (should_exit, new_data_to_display) =
+                screen_key_events(app, key, &data_iterator, data_to_display);
             data_to_display = new_data_to_display;
-            
+
             if should_exit {
                 return Ok(false);
             }

@@ -1,9 +1,14 @@
+use crate::tui::app::{App, CurrentScreen};
+use crate::ItemProduct;
 use crossterm::event::{KeyCode, KeyEvent};
 use log::info;
-use crate::ItemProduct;
-use crate::tui::app::{App, CurrentScreen};
 
-pub fn screen_key_events(app: &mut App, key: KeyEvent, data_iterator: &[Vec<ItemProduct>], mut data_to_display: Vec<ItemProduct>) -> (bool, Vec<ItemProduct>) {
+pub fn screen_key_events(
+    app: &mut App,
+    key: KeyEvent,
+    data_iterator: &[Vec<ItemProduct>],
+    mut data_to_display: Vec<ItemProduct>,
+) -> (bool, Vec<ItemProduct>) {
     match app.current_screen {
         CurrentScreen::Main => match key.code {
             KeyCode::Esc => {
@@ -29,26 +34,33 @@ pub fn screen_key_events(app: &mut App, key: KeyEvent, data_iterator: &[Vec<Item
                 data_to_display = data_iterator[app.current_page].clone();
                 (false, data_to_display)
             }
-            _ => {(false, data_to_display)}
+            _ => (false, data_to_display),
         },
         CurrentScreen::Exit => match key.code {
-            KeyCode::Char('y') => {
-                (true, data_to_display)
-            }
+            KeyCode::Char('y') => (true, data_to_display),
             KeyCode::Char('n') => {
                 app.current_screen = CurrentScreen::Main;
                 (false, data_to_display)
             }
-            _ => {(false, data_to_display)}
+            _ => (false, data_to_display),
         },
         CurrentScreen::Settings => match key.code {
-            KeyCode::Char('c') => { app.current_screen = CurrentScreen::Config; (false, data_to_display) },
-            KeyCode::Char('q') => { app.current_screen = CurrentScreen::Exit; (false, data_to_display) },
-            _ => {(false, data_to_display)}
+            KeyCode::Char('c') => {
+                app.current_screen = CurrentScreen::Config;
+                (false, data_to_display)
+            }
+            KeyCode::Char('q') => {
+                app.current_screen = CurrentScreen::Exit;
+                (false, data_to_display)
+            }
+            _ => (false, data_to_display),
         },
         _ => match key.code {
-            KeyCode::Char('q') => { app.current_screen = CurrentScreen::Exit; (false, data_to_display) },
-            _ => {(false, data_to_display)}
+            KeyCode::Char('q') => {
+                app.current_screen = CurrentScreen::Exit;
+                (false, data_to_display)
+            }
+            _ => (false, data_to_display),
         },
     }
 }
