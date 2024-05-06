@@ -4,10 +4,7 @@ use crate::cli::{GenerateArgs, GenerateSubCommands};
 use crate::items::insert_items;
 use crate::products::insert_products;
 use anyhow::Result;
-use pyo3::types::PyModule;
-use pyo3::Python;
 
-use pyo3::prelude::*;
 use regex::Regex;
 use sqlx_mysql::MySqlPool;
 

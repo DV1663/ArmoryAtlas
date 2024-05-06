@@ -20,10 +20,10 @@ pub fn screen_key_events(
                 if app.current_page > 0 {
                     app.current_page = (app.current_page - 1) % app.max_page;
                     info!("new page: {}", app.current_page);
-                    data_to_display = data_iterator[app.current_page].clone();
+                    data_to_display.clone_from(&data_iterator[app.current_page]);
                 } else {
                     app.current_page = app.max_page - 1;
-                    data_to_display = data_iterator[app.current_page].clone();
+                    data_to_display.clone_from(&data_iterator[app.current_page]);
                 }
                 (false, data_to_display)
             }
@@ -31,7 +31,7 @@ pub fn screen_key_events(
                 info!("moving to next page");
                 app.current_page = (app.current_page + 1) % app.max_page;
                 info!("new page: {}", app.current_page);
-                data_to_display = data_iterator[app.current_page].clone();
+                data_to_display.clone_from(&data_iterator[app.current_page]);
                 (false, data_to_display)
             }
             _ => (false, data_to_display),

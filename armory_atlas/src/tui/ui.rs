@@ -67,16 +67,13 @@ pub fn ui(
 
     f.render_widget(title, main_layout[0]);
 
-    match app.current_screen {
-        CurrentScreen::Main => {
-            // render a search bar with a header for the page
-            f.render_widget(search_box.widget(), content_container[0]);
+    if app.current_screen == CurrentScreen::Main {
+        // render a search bar with a header for the page
+        f.render_widget(search_box.widget(), content_container[0]);
 
-            if let Some(new_data) = main_page_data {
-                f.render_widget(new_data, content_layout[1]);
-            }
+        if let Some(new_data) = main_page_data {
+            f.render_widget(new_data, content_layout[1]);
         }
-        _ => {}
     }
 
     let current_keys_hint = {

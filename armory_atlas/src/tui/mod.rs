@@ -2,12 +2,12 @@ use std::io;
 
 use crate::{search_items, ItemProduct};
 use anyhow::Result;
-use crossterm::event::{DisableMouseCapture, EnableMouseCapture, Event, KeyCode};
+use crossterm::event::{DisableMouseCapture, EnableMouseCapture, Event};
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
 use crossterm::{event, execute};
-use log::{error, info};
+use log::{error};
 use ratatui::layout::Constraint;
 use ratatui::prelude::{Backend, CrosstermBackend, Style};
 use ratatui::widgets::{Block, Borders, Row, Table};
