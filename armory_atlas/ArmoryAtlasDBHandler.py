@@ -1,26 +1,35 @@
 import os
-
 import mysql.connector
 import toml
 
 
+class ItemProduct:
+    def __init__(self, product_id, product_name, product_type, quantity, size):
+        self.product_id = product_id
+        self.product_name = product_name
+        self.product_type = product_type
+        self.quantity = quantity
+        self.size = size
+
+
 class DBHandler:
+    """
+    The `DBHandler` class is responsible for interacting with the MySQL database
+    that holds the Armory Atlas inventory data. It provides methods to establish
+    a database connection and to perform queries such as retrieving available
+    items.
+
+    Attributes:
+        db (mysql.connector.connection.MySQLConnection): The database connection object.
+        cursor (mysql.connector.cursor.MySQLCursor): The cursor object for executing queries.
+
+    Methods:
+        __init__(self): Initializes the DBHandler instance, establishing a database connection.
+        Get_items(self): Retrieves a list of available items from the database.
+        Get_config(): Retrieves the database configuration from a .toml file.
+    """
 
     def __init__(self):
-        """
-        Initializes a new instance of the DBHandler class.
-
-        This constructor method establishes a connection to a MySQL database using the provided configuration.
-        It creates a connection object using the mysql.connector library and the connection details retrieved from
-        the get_config() method. The connection details include the host, user, password, and database name.
-        The connection object is stored in the 'db' attribute of the class.
-
-        Parameters:
-            self
-
-        Returns:
-            None
-        """
         config = self.get_config()
         host = config.get("host")
         # split host at ':'
@@ -37,23 +46,23 @@ class DBHandler:
 
         self.cursor = self.db.cursor()
 
-    def get_items(self) -> list:
+    def get_items(self) -> list[ItemProduct]:
         query = """
-        SELECT
-                i.ProductID as product_id,
-                p.NameOfProduct AS product_name,
-                p.Type AS product_type,
-                i.Quantity as quantity,
-                i.Size AS size
-            FROM
-                Products p
-                    JOIN
-                (SELECT ProductID, Size, count(*) as Quantity from Items group by ProductID, Size)
-                    AS
-                    i ON p.ProductID = i.ProductID
-            WHERE
-                i.Quantity > 0;
-                """
+            SELECT
+                    i.ProductID as product_id,
+                    p.NameOfProduct AS product_name,
+                    p.Type AS product_type,
+                    i.Quantity as quantity,
+                    i.Size AS size
+                FROM
+                    Products p
+                        JOIN
+                    (SELECT ProductID, Size, count(*) as Quantity from Items group by ProductID, Size)
+                        AS
+                        i ON p.ProductID = i.ProductID
+                WHERE
+                    i.Quantity > 0;
+                    """
 
         self.cursor.execute(query)
         items = self.cursor.fetchall()
@@ -71,15 +80,6 @@ class DBHandler:
         with open(config_path, "r") as f:
             config = toml.load(f)
         return config
-
-
-class ItemProduct:
-    def __init__(self, product_id, product_name, product_type, quantity, size):
-        self.product_id = product_id
-        self.product_name = product_name
-        self.product_type = product_type
-        self.quantity = quantity
-        self.size = size
 
 
 if __name__ == "__main__":

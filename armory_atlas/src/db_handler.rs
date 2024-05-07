@@ -1,13 +1,13 @@
 use crate::{DATABASE_HANDLER, ItemProduct};
 use pyo3::prelude::*;
 
-pub struct DBHandlerMaster {
+pub struct DBHandler {
     pool: PyObject,
 }
 
-impl DBHandlerMaster {
+impl DBHandler {
     pub fn new() -> anyhow::Result<Self> {
-        let pool = DBHandlerMaster::get_db_handler_obj()?;
+        let pool = DBHandler::get_db_handler_obj()?;
         Ok(Self { pool })
     }
 
@@ -36,12 +36,11 @@ impl DBHandlerMaster {
 
 #[cfg(test)]
 mod tests {
-    use crate::ArmoryAtlasDBHandler::DBHandler;
     use super::*;
 
     #[test]
     fn test_get_db_handler_obj() {
-        let db_handler = DBHandlerMaster::get_db_handler_obj();
+        let db_handler = DBHandler::get_db_handler_obj();
         match db_handler {
             Ok(_) => assert!(true),
             Err(e) => assert!(false, "{:?}", e),
@@ -50,27 +49,11 @@ mod tests {
 
     #[test]
     fn test_get_items() {
-        let db_handler = DBHandlerMaster::new();
+        let db_handler = DBHandler::new();
         assert!(db_handler.is_ok());
 
         let db_handler = db_handler.unwrap();
         let items = db_handler.get_items();
         assert!(items.is_ok());
-    }
-    
-    #[test]
-    fn test_bindgen_obj() -> anyhow::Result<()> {
-        Python::with_gil(|py| {
-            if let Err(e) = DBHandler::new(py) {
-                assert!(false, "{:?}", e);
-            }
-            
-            let mut handler = DBHandler::new(py).unwrap();
-            
-            let items = handler.get_items(py);
-            assert!(items.is_ok());
-        });
-        
-        Ok(())
     }
 }

@@ -7,9 +7,6 @@ edition = "2021"
 name = "armory_atlas_lib"
 crate-type = ["cdylib", "rlib"]
 
-[build-dependencies]
-pyo3_bindgen = { workspace = true }
-
 [dependencies]
 anyhow = { workspace = true }
 thiserror = { workspace = true }
