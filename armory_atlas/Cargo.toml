@@ -1,0 +1,40 @@
+[package]
+name = "armory_atlas"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "armory_atlas_lib"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+toml = { workspace = true }
+
+sqlx = { workspace = true }
+sqlx-mysql = { workspace = true }
+tokio = { workspace = true }
+
+rayon = { workspace = true }
+keyring = { workspace = true }
+itertools = { workspace = true }
+config = { workspace = true }
+rpassword = { workspace = true }
+rand = { workspace = true }
+regex = { workspace = true }
+uuid = { workspace = true }
+
+clap = { workspace = true }
+crossterm = { workspace = true }
+ratatui = { workspace = true }
+tui-textarea = { workspace = true }
+
+log = { workspace = true }
+env_logger = { workspace = true }
+chrono = { workspace = true }
+
+pyo3 = { workspace = true }

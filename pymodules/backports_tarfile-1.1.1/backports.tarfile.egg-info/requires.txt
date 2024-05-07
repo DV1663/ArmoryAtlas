@@ -1,0 +1,14 @@
+
+[docs]
+sphinx>=3.5
+jaraco.packaging>=9.3
+rst.linker>=1.9
+furo
+sphinx-lint
+
+[testing]
+pytest!=8.1.*,>=6
+pytest-checkdocs>=2.4
+pytest-cov
+pytest-enabler>=2.2
+jaraco.test
