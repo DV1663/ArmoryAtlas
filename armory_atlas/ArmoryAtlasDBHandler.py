@@ -11,6 +11,19 @@ class ItemProduct:
         self.quantity = quantity
         self.size = size
 
+    def __repr__(self):
+        return f"Product ID: {self.product_id}, Product Name: {self.product_name}, Product Type: {self.product_type}, Quantity: {self.quantity}, Size: {self.size}"
+
+
+class InStockSize:
+    def __init__(self, product_id, size, totIn):
+        self.product_id = product_id
+        self.size = size
+        self.totIn = totIn
+
+    def __repr__(self):
+        return f"Product ID: {self.product_id}, Size: {self.size}, In Stock: {self.totIn}"
+
 
 class DBHandler:
     """
@@ -69,6 +82,26 @@ class DBHandler:
         item_list = [ItemProduct(*item) for item in items]
         return item_list
 
+    """This query will only return the information for the product with the specified ID and the total count of items 
+    in stock for a given size for that product."""
+    def get_in_stock_size(self, function_name: str, product_id: str, size: str) -> list[InStockSize]:
+        query = f"""
+            SELECT 
+                    p.ProductID as product_id,
+                    p.NameOfProduct AS product_name,
+                    in_stock_for_product('{product_id}', '{size}') AS totIn
+                FROM 
+                    Products p
+                WHERE
+                    p.ProductID = '{product_id}';
+                    """
+
+        self.cursor.execute(query)
+        size_stock = self.cursor.fetchall()
+        size_stock_list = [InStockSize(*size_stock) for size_stock in size_stock]
+        return size_stock_list
+
+
     @staticmethod
     def get_config() -> dict:
         if os.name == 'nt':
@@ -85,3 +118,4 @@ class DBHandler:
 if __name__ == "__main__":
     db = DBHandler()
     print(db.get_items())
+    print(db.get_in_stock_size("in_stock_for_product", "M240001-3708453", "XL"))
