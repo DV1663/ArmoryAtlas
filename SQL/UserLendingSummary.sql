@@ -2,16 +2,22 @@ CREATE VIEW UserLendingSummary AS
 SELECT
     u.SSN,
     u.Name,
-    COUNT(l.LendingID) AS TotalLendings,
-    SUM(CASE WHEN l.ReturnDate IS NULL THEN 1 ELSE 0 END) AS currLendings
+    COUNT(DISTINCT tot.LendingID) AS TotalLendings,
+    COUNT(DISTINCT curr.LendingID) AS currLendings
 FROM
     Users u
 LEFT JOIN
-    Lendings l ON u.SSN = l.SSN
+    Lendings tot ON u.SSN = tot.SSN
+LEFT JOIN
+    Lendings curr ON u.SSN = curr.SSN 
+AND
+	curr.ReturnDate IS NULL
 GROUP BY
     u.SSN,
     u.Name
 ORDER BY
     TotalLendings DESC;
     
-SELECT * FROM UserLendingSummary;
+    
+DROP view UserLendingSummary;
+select * from UserLendingSummary;
