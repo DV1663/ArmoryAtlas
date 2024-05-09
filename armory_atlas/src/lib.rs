@@ -76,6 +76,10 @@ pub async fn generate_test_data(args: GenerateArgs, pool: &MySqlPool) -> Result<
         }
         Some(GenerateSubCommands::Users(sub_args)) => {
             users::insert_users(pool, sub_args.num_users).await?
+        },
+        Some(GenerateSubCommands::Loans(sub_args)) => {
+            println!("Inserting {} loans", sub_args.num_loans);
+            leandings::insert_leandings(pool, sub_args.num_loans).await?
         }
         _ => {}
     }

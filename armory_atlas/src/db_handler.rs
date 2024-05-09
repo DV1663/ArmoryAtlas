@@ -38,7 +38,7 @@ impl DBHandler {
 
     pub fn get_rand_item(&self) -> anyhow::Result<Items> {
         Python::with_gil(|py| {
-            let items = self.pool.call_method0(py, "get_rand_available_item")?;
+            let items = self.pool.call_method0(py, "get_rand_item")?;
             let item: Items = items.extract(py)?;
             Ok(item)
         })
@@ -74,5 +74,32 @@ mod tests {
         let db_handler = db_handler.unwrap();
         let items = db_handler.get_items();
         assert!(items.is_ok());
+    }
+    
+    #[test]
+    fn test_get_rand_item() {
+        let db_handler = DBHandler::new();
+        assert!(db_handler.is_ok());
+
+        let db_handler = db_handler.unwrap();
+        let item = db_handler.get_rand_item();
+        
+        assert!(item.is_ok());
+
+        let item = item.unwrap();
+        println!("{:?}", item);
+    }
+    
+    #[test]
+    fn test_get_rand_user() {
+        let db_handler = DBHandler::new();
+        assert!(db_handler.is_ok());
+
+        let db_handler = db_handler.unwrap();
+        let user = db_handler.get_rand_user();
+        assert!(user.is_ok());
+
+        let user = user.unwrap();
+        println!("{:?}", user);
     }
 }
