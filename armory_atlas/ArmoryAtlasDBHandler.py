@@ -13,7 +13,8 @@ class ItemProduct:
         self.size = size
 
     def __repr__(self):
-        return f"Product ID: {self.product_id}, Product Name: {self.product_name}, Product Type: {self.product_type}, Quantity: {self.quantity}, Size: {self.size}"
+        return (f"Product ID: {self.product_id}, Product Name: {self.product_name}, Product Type: {self.product_type}, "
+                f"Quantity: {self.quantity}, Size: {self.size}")
 
 
 class InStockSize:
@@ -55,6 +56,7 @@ class Items:
 
     def __repr__(self):
         return f"Items({self.item_id}, {self.product_id}, {self.size}, {self.level_of_use})"
+
 
 class DBHandler:
     """
@@ -113,37 +115,40 @@ class DBHandler:
         item_list = [ItemProduct(*item) for item in items]
         return item_list
 
-    def get_rand_item(self) -> Items:
-        query = """
-        call GetAvailableItems();
-        """
-
-        self.cursor.execute(query)
-        items = self.cursor.fetchall()
-        item_list = [Items(*item) for item in items]
-        return item_list[0]
-
     """This query will only return the information for the product with the specified ID and the total count of items 
     in stock for a given size for that product."""
-    def get_in_stock_size(self, product_id: str, size: str) -> list[InStockSize]:
-        query = f"""
-            SELECT 
-                    p.ProductID as product_id,
-                    p.NameOfProduct AS product_name,
-                    in_stock_for_product('{product_id}', '{size}') AS totIn
-                FROM 
-                    Products p
-                WHERE
-                    p.ProductID = '{product_id}';
-                    """
 
-        self.cursor.execute(query)
-        size_stock = self.cursor.fetchall()
-        size_stock_list = [InStockSize(*size_stock) for size_stock in size_stock]
-        return size_stock_list
+    def get_in_stock_size(self, product_id: str, size: str) -> list[InStockSize] | mysql.connector.Error:
+        query = f"""
+        SELECT 
+                p.ProductID as product_id,
+                p.NameOfProduct AS product_name,
+                in_stock_for_product('{product_id}', '{size}') AS totIn
+            FROM 
+                Products p
+            WHERE
+                p.ProductID = '{product_id}';
+                """
+        try:
+            # Execute query with multi=True
+            results = self.cursor.execute(query, multi=True)
+
+            # Iterate through all result sets
+            size_stock_list = []
+            for result in results:
+                if result.with_rows:  # Check if the result has rows
+                    # Fetch all rows from the current result set
+                    size_stock = result.fetchall()
+                    size_stock_list.extend([InStockSize(*stock) for stock in size_stock])
+            return size_stock_list
+
+        except mysql.connector.Error as err:
+            print("Error: ", err)
+            return err
 
     """A view (number_of_borrowes) implwmented in mysql that we can use to get the total 
     number of borrowes for each user."""
+
     def number_of_borrowes(self) -> list[TotBorrowes]:
         query = """
             SELECT * FROM number_of_borrowes;
@@ -164,14 +169,40 @@ class DBHandler:
         users_list = [User(*users) for users in users]
         return users_list
 
-    def get_rand_item_not_borrowed(self) -> list[Items]:
+    def get_rand_item(self) -> list[Items]:
         query = """
-                    CALL GetAvailableItems();
-                            """
+            SELECT
+                i.ItemID,
+                i.ProductID,
+                i.Size,
+                i.LevelOfUse
+            FROM
+                Items AS i
+            LEFT JOIN
+                Lendings AS l ON i.ItemID = l.ItemID
+            WHERE
+                l.ItemID IS NULL OR l.ReturnDate < CURDATE()
+            group by
+                rand(), i.ItemID
+            LIMIT 1;
+        """
 
+        # Execute the stored procedure
         self.cursor.execute(query)
-        items = self.cursor.fetchall()
-        items_list = [Items(*item) for item in items]
+
+        # Initialize the list to hold items
+        items_list = []
+
+        # Fetch all sets of results
+        while True:
+            # Fetch all rows from the current result set
+            items = self.cursor.fetchall()
+            items_list.extend([Items(*item) for item in items])
+
+            # Check if there are more results
+            if self.cursor.nextset() is None:
+                break
+
         return items_list
 
     @staticmethod
@@ -194,4 +225,3 @@ if __name__ == "__main__":
     print(db.get_in_stock_size("M240001-3708453", "XL"))
     print(db.number_of_borrowes())
     print(db.get_rand_user())
-    print(db.get_rand_item_not_borrowed())
