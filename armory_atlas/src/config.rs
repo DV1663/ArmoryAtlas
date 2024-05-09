@@ -32,11 +32,12 @@ pub fn get_config() -> anyhow::Result<Config> {
         .set_default("user", "root")?
         .set_default("host", "localhost")?
         .set_default("database", "ArmoryAtlas")?
+        .set_default("password", "")?
         .build()?;
     Ok(settings)
 }
 
-pub fn write_config(app_config: &AppConfig) -> anyhow::Result<()> {
+pub fn write_config(app_config: &AppConfig, password: &str) -> anyhow::Result<()> {
     #[cfg(not(target_os = "windows"))]
     let path = PathBuf::new().join(env!("HOME")).join(CONFIG_FILE);
 
@@ -48,9 +49,11 @@ pub fn write_config(app_config: &AppConfig) -> anyhow::Result<()> {
         create_config_file(&path)?;
     }
 
+    let config = toml::to_string(app_config)?;
+
     let mut file = std::fs::OpenOptions::new().write(true).open(path)?;
 
-    file.write_all(toml::to_string(app_config)?.as_bytes())?;
+    file.write_all(format!("{}\npassword=\"{}\"", config, password).as_bytes())?;
     Ok(())
 }
 

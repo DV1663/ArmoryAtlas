@@ -8,25 +8,24 @@ use pyo3::FromPyObject;
 
 use regex::Regex;
 use sqlx_mysql::MySqlPool;
-include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 pub mod cli;
 pub mod config;
 pub mod db_handler;
 pub mod items;
+pub mod leandings;
 pub mod password_handler;
 pub mod products;
 pub mod tui;
+pub mod users;
 
 pub const CONFIG_FILE: &str = ".config/armoryatlas/config.toml";
 pub const DATABASE_HANDLER: &str = include_str!("../ArmoryAtlasDBHandler.py");
 
 use sqlx::FromRow;
-use uuid::Uuid;
 
 #[derive(Debug, FromRow, Clone, FromPyObject)]
 pub struct ItemProduct {
-    #[pyo3()]
     product_id: String,
     product_name: String,
     product_type: String,
@@ -74,6 +73,9 @@ pub async fn generate_test_data(args: GenerateArgs, pool: &MySqlPool) -> Result<
         Some(GenerateSubCommands::Products) => insert_products(pool).await?,
         Some(GenerateSubCommands::Items(sub_args)) => {
             insert_items(pool, sub_args.num_items).await?
+        }
+        Some(GenerateSubCommands::Users(sub_args)) => {
+            users::insert_users(pool, sub_args.num_users).await?
         }
         _ => {}
     }

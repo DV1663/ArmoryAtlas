@@ -39,7 +39,8 @@ pub enum GenerateSubCommands {
 
 #[derive(Args, Debug, Clone)]
 pub struct UsersArgs {
-    pub num_users: Option<i64>,
+    #[arg(default_value = "100")]
+    pub num_users: usize,
 }
 
 #[derive(Args, Debug, Clone)]

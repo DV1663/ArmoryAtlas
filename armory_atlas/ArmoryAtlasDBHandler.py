@@ -1,6 +1,7 @@
 import os
 import mysql.connector
 import toml
+import uuid
 
 
 class ItemProduct:
@@ -54,7 +55,6 @@ class Items:
 
     def __repr__(self):
         return f"Items({self.item_id}, {self.product_id}, {self.size}, {self.level_of_use})"
-
 
 class DBHandler:
     """
@@ -112,6 +112,16 @@ class DBHandler:
         items = self.cursor.fetchall()
         item_list = [ItemProduct(*item) for item in items]
         return item_list
+
+    def get_rand_item(self) -> Items:
+        query = """
+        call GetAvailableItems();
+        """
+
+        self.cursor.execute(query)
+        items = self.cursor.fetchall()
+        item_list = [Items(*item) for item in items]
+        return item_list[0]
 
     """This query will only return the information for the product with the specified ID and the total count of items 
     in stock for a given size for that product."""
@@ -180,6 +190,7 @@ class DBHandler:
 if __name__ == "__main__":
     db = DBHandler()
     print(db.get_items())
+    print(db.get_rand_item())
     print(db.get_in_stock_size("M240001-3708453", "XL"))
     print(db.number_of_borrowes())
     print(db.get_rand_user())

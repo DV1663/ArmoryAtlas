@@ -61,7 +61,7 @@ async fn main() -> Result<()> {
     let password = get_db_pass(&user, &host)?;
     match cmd.subcommands {
         Some(CommandType::Config(args)) => {
-            write_config(&args)?;
+            write_config(&args, &password)?;
         }
         Some(CommandType::Generate(args)) => {
             let pool =
@@ -94,23 +94,6 @@ async fn main() -> Result<()> {
                 MySqlPool::connect(format!("mysql://{user}:{password}@{host}/{database}").as_str())
                     .await?;
 
-            /*let query = "
-                            SELECT
-                                Items.ItemID AS item_id,
-                                Products.NameOfProduct AS name_of_product,
-                                Products.Type AS type_of_product,
-                                Items.Size AS size,
-                                Items.LevelOfUse AS level_of_use
-                            FROM
-                                Items
-                            INNER JOIN
-                                Products ON Items.ProductID = Products.ProductID
-                        ";
-
-                        let items: Vec<ItemProduct> = sqlx::query_as::<_, ItemProduct>(query).fetch_all(&pool).await?;
-
-                        println!("{:?}", items[0]);
-            */
             run_tui(pool).await?;
         }
     };

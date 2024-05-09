@@ -14,16 +14,18 @@ CREATE TABLE `Items` (
 */
 
 use anyhow::Result;
+use pyo3::FromPyObject;
 use rand::Rng;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use sqlx_mysql::MySqlPool;
 
 use crate::products;
 
 pub const SIZES: [&str; 6] = ["XS", "S", "M", "L", "XL", "XXL"];
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow, FromPyObject)]
 pub struct Items {
     #[serde(rename = "ItemID")]
     pub item_id: String,
