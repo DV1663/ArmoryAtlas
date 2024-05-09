@@ -13,8 +13,8 @@ pub async fn insert_leandings(pool: &MySqlPool, num_leandings: usize) -> anyhow:
         sqlx::query("INSERT INTO Leandings (LeandingID, UserID, ProductID, BorrowingDate, ReturnDate) VALUES (UUID_TO_BIN(UUID()), ?, ?, ?, ?)")
             .bind(&leanding.user_id)
             .bind(&leanding.product_id)
-            .bind(&leanding.borrowing_date)
-            .bind(&leanding.return_date)
+            .bind(leanding.borrowing_date)
+            .bind(leanding.return_date)
             .execute(pool)
             .await?;
     }
@@ -77,8 +77,8 @@ impl Loans {
         };
 
         // Create a NaiveDate object from the generated year, month, and day
-        let date = NaiveDate::from_ymd_opt(year, month, day).unwrap();
-        date
+        
+        NaiveDate::from_ymd_opt(year, month, day).unwrap()
     }
 
     pub fn new_random() -> anyhow::Result<Self> {

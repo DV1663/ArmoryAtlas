@@ -58,8 +58,7 @@ impl Users {
     }
 
     fn generate_random_name(gender: bool) -> (String, String) {
-        let first_names = vec![
-            "James",
+        let first_names = ["James",
             "Mary",
             "John",
             "Patricia",
@@ -68,10 +67,8 @@ impl Users {
             "Michael",
             "Linda",
             "William",
-            "Elizabeth",
-        ];
-        let last_names = vec![
-            "Smith",
+            "Elizabeth"];
+        let last_names = ["Smith",
             "Johnson",
             "Williams",
             "Brown",
@@ -80,8 +77,7 @@ impl Users {
             "Miller",
             "Davis",
             "Rodriguez",
-            "Martinez",
-        ];
+            "Martinez"];
 
         // Get a random number generator
         let mut rng = rand::thread_rng();
@@ -153,12 +149,12 @@ impl SSN {
         let gender_part = if gender {
             // generate a random uneaven number between 0 and 9
             let uneaven = [1, 3, 5, 7, 9];
-            let random_uneaven = uneaven[rand::thread_rng().gen_range(0..=4)].to_string();
-            random_uneaven
+            
+            uneaven[rand::thread_rng().gen_range(0..=4)].to_string()
         } else {
             let even = [0, 2, 4, 6, 8];
-            let random_even = even[rand::thread_rng().gen_range(0..=4)].to_string();
-            random_even
+            
+            even[rand::thread_rng().gen_range(0..=4)].to_string()
         };
 
         let value = format!("{}{}{}", &date_part, &random_part, &gender_part);
@@ -185,7 +181,7 @@ impl SSN {
                 continue;
             }
             if (i + 1) % 2 == 0 {
-                let new_digit = digit * 1;
+                let new_digit = *digit;
                 if new_digit != 0 {
                     new_digits.push(new_digit);
                 }

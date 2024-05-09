@@ -23,7 +23,6 @@ pub const CONFIG_FILE: &str = ".config/armoryatlas/config.toml";
 pub const DATABASE_HANDLER: &str = include_str!("../ArmoryAtlasDBHandler.py");
 
 use sqlx::FromRow;
-use uuid::Uuid;
 
 #[derive(Debug, FromRow, Clone, FromPyObject)]
 pub struct ItemProduct {
