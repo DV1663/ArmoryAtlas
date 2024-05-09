@@ -1,6 +1,9 @@
 use crate::{DATABASE_HANDLER, ItemProduct};
 use pyo3::prelude::*;
+use crate::items::Items;
+use crate::users::Users;
 
+#[derive(Clone)]
 pub struct DBHandler {
     pool: PyObject,
 }
@@ -30,6 +33,22 @@ impl DBHandler {
             let db_handler = module.getattr("DBHandler")?;
             let db = db_handler.call0()?.to_object(py);
             Ok(db)
+        })
+    }
+    
+    pub fn get_rand_item(&self) -> anyhow::Result<Items> {
+        Python::with_gil(|py| {
+            let items = self.pool.call_method0(py, "get_rand_available_item")?;
+            let item: Items = items.extract(py)?;
+            Ok(item)
+        })
+    }
+    
+    pub fn get_rand_user(&self) -> anyhow::Result<Users> {
+        Python::with_gil(|py| {
+            let users = self.pool.call_method0(py, "get_rand_user")?;
+            let user: Users = users.extract(py)?;
+            Ok(user)
         })
     }
 }

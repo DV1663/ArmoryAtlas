@@ -130,11 +130,15 @@ fn get_data(app: &mut App, items: &Option<Vec<ItemProduct>>) -> Result<Table<'st
 }
 
 async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<bool> {
-    let app_clone = Arc::new(Mutex::new(app.clone()));
-    let data = fetch_data(&app_clone).await.unwrap_or_else(|_| {
-        eprintln!("Error fetching data");
-        Vec::new()
-    });
+    
+    
+    let data = match app.db_handler.get_items() {
+        Ok(data) => data,
+        Err(err) => {
+            error!("{err:?}");
+            return Ok(false);
+        }
+    };
 
     // Store the iterator and its values in variables
     let data_iterator: Vec<Vec<ItemProduct>> =

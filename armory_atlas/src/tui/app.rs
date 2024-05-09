@@ -3,6 +3,7 @@ use anyhow::Result;
 use sqlx_mysql::MySqlPool;
 
 use crate::config::get_config;
+use crate::db_handler::DBHandler;
 
 #[derive(Clone, Eq, PartialEq)]
 pub enum CurrentScreen {
@@ -20,6 +21,7 @@ pub enum CurrentlyEditing {
 
 #[derive(Clone)]
 pub struct App {
+    pub db_handler: DBHandler,
     pub pool: MySqlPool,
     pub user: String,
     pub host: String,
@@ -39,7 +41,10 @@ impl App {
             config.get("host")?,
             config.get("database")?,
         );
+        
+        let db_handler = DBHandler::new()?;
         Ok(Self {
+            db_handler,
             pool,
             user,
             host,

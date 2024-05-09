@@ -1,6 +1,7 @@
 import os
 import mysql.connector
 import toml
+import uuid
 
 
 class ItemProduct:
@@ -10,6 +11,17 @@ class ItemProduct:
         self.product_type = product_type
         self.quantity = quantity
         self.size = size
+
+
+class Items:
+    def __init__(self, item_id, product_id, size, level_of_use):
+        self.item_id = uuid.UUID(bytes=item_id).__str__()
+        self.product_id = product_id
+        self.size = size
+        self.level_of_use = level_of_use
+
+    def __repr__(self):
+        return f"Items({self.item_id}, {self.product_id}, {self.size}, {self.level_of_use})"
 
 
 class DBHandler:
@@ -69,6 +81,16 @@ class DBHandler:
         item_list = [ItemProduct(*item) for item in items]
         return item_list
 
+    def get_rand_available_item(self) -> Items:
+        query = """
+        call GetAvailableItems();
+        """
+
+        self.cursor.execute(query)
+        items = self.cursor.fetchall()
+        item_list = [Items(*item) for item in items]
+        return item_list[0]
+
     @staticmethod
     def get_config() -> dict:
         if os.name == 'nt':
@@ -85,3 +107,5 @@ class DBHandler:
 if __name__ == "__main__":
     db = DBHandler()
     print(db.get_items())
+
+    print(db.get_rand_available_item())

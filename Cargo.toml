@@ -7,7 +7,7 @@ resolver = "2"
 [workspace.dependencies]
 # Pyo3
 pyo3_bindgen = { version =  "0.4.0" }
-pyo3 = { version = "0.20.3", features = ["anyhow", "serde", "auto-initialize"] }
+pyo3 = { version = "0.20.3", features = ["anyhow", "serde", "auto-initialize", "chrono"] }
 
 # error handling
 anyhow = { version = "1.0.68", features = ["backtrace"] }
@@ -19,8 +19,8 @@ serde_json = "1.0.91"
 toml = "0.8.12"
 
 # database
-sqlx = { version = "0.7.4", features = ["mysql", "macros", "sqlx-mysql", "json", "runtime-tokio", "tls-native-tls", "uuid"] }
-sqlx-mysql = { version = "0.7.4", features = ["serde"] }
+sqlx = { version = "0.7.4", features = ["mysql", "macros", "sqlx-mysql", "json", "runtime-tokio", "tls-native-tls", "uuid", "chrono"] }
+sqlx-mysql = { version = "0.7.4", features = ["serde", "chrono", "uuid"] }
 tokio = { version = "1.0.0", features = ["rt", "rt-multi-thread", "macros", "full"] }
 
 # utils
@@ -31,7 +31,7 @@ config = { version = "0.14.0", features = ["toml"] }
 rpassword = "7.3.1"
 rand = "0.8.5"
 regex = "1.10.4"
-uuid = "1.8.0"
+uuid = { version = "1.8.0", features = ["serde", "v4"] }
 
 # CLI and TUI
 clap = { version = "4.0.32", features = ["derive", "usage", "color", "help", "suggestions", "error-context"] }
