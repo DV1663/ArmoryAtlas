@@ -196,6 +196,18 @@ class DBHandler:
 
         return items_list[0]
 
+    """ A procedure we call for that updates the returndate to the current date for the item with the specified ID. 
+    a triiger is used in the background"""
+    def return_item(self, lending_id: str):
+        query = f"""
+            CALL return_item('{lending_id}');
+        """
+
+        # Execute the stored procedure
+        self.cursor.execute(query, multi=True)
+
+
+
     @staticmethod
     def get_config() -> dict:
         if os.name == 'nt':
@@ -226,4 +238,5 @@ if __name__ == "__main__":
     print(db.get_in_stock_size("M240001-3708453", "XL"))
     print(db.number_of_borrowes())
     print(db.get_rand_user())
+    db.return_item("232a3d13-05fd-11ef-ade3-00e04c0003ab") # This is a random UUID (tror den funkar, alltså funktionen)
     print(db.test())
