@@ -1,4 +1,6 @@
-CREATE VIEW UserLendingSummary AS
+# ==============This one is done================== #
+
+CREATE VIEW number_of_borrowes AS
 SELECT
     u.SSN,
     u.Name,
@@ -19,5 +21,7 @@ ORDER BY
     TotalLendings DESC;
     
     
-DROP view UserLendingSummary;
-select * from UserLendingSummary;
+DROP view number_of_borrowes;
+select * from number_of_borrowes;
+
+# It is implemented in python aswell
