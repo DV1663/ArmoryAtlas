@@ -8,9 +8,10 @@ use crate::db_handler::DBHandler;
 
 pub async fn insert_leandings(pool: &MySqlPool, num_leandings: usize) -> anyhow::Result<()> {
     let leandings = generate_leandings(num_leandings)?;
+    dbg!(&leandings);
 
     for leanding in leandings {
-        sqlx::query("INSERT INTO Leandings (LeandingID, UserID, ProductID, BorrowingDate, ReturnDate) VALUES (UUID_TO_BIN(UUID()), ?, ?, ?, ?)")
+        sqlx::query("INSERT INTO Lendings (LeandingID, UserID, ProductID, BorrowingDate, ReturnDate) VALUES (UUID_TO_BIN(UUID()), ?, ?, ?, ?)")
             .bind(&leanding.user_id)
             .bind(&leanding.product_id)
             .bind(leanding.borrowing_date)

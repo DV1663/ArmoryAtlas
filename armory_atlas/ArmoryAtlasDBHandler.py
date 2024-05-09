@@ -159,7 +159,7 @@ class DBHandler:
         borrowes_list = [TotBorrowes(*borrowes) for borrowes in borrowes]
         return borrowes_list
 
-    def get_rand_user(self) -> list[User]:
+    def get_rand_user(self) -> User:
         query = """
             SELECT * FROM Users ORDER BY RAND() LIMIT 1;
                     """
@@ -167,9 +167,9 @@ class DBHandler:
         self.cursor.execute(query)
         users = self.cursor.fetchall()
         users_list = [User(*users) for users in users]
-        return users_list
+        return users_list[0]
 
-    def get_rand_item(self) -> list[Items]:
+    def get_rand_item(self) -> Items:
         query = """
             SELECT
                 i.ItemID,
@@ -203,7 +203,7 @@ class DBHandler:
             if self.cursor.nextset() is None:
                 break
 
-        return items_list
+        return items_list[0]
 
     """ A procedure we call for that updates the returndate to the current date for the item with the specified ID. 
     a triiger is used in the background"""
@@ -229,6 +229,16 @@ class DBHandler:
             config = toml.load(f)
         return config
 
+    def test(self):
+        query = """
+            SELECT * FROM Lendings;
+                    """
+
+        self.cursor.execute(query)
+        borrowes = self.cursor.fetchall()
+
+        return borrowes
+
 
 if __name__ == "__main__":
     db = DBHandler()
@@ -238,3 +248,4 @@ if __name__ == "__main__":
     print(db.number_of_borrowes())
     print(db.get_rand_user())
     db.return_item("232a3d13-05fd-11ef-ade3-00e04c0003ab") # This is a random UUID (tror den funkar, alltså funktionen)
+    print(db.test())

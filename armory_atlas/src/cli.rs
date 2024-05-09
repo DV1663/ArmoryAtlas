@@ -45,7 +45,8 @@ pub struct UsersArgs {
 
 #[derive(Args, Debug, Clone)]
 pub struct LoansArgs {
-    pub products: bool,
+    #[arg(default_value = "100")]
+    pub num_loans: usize,
 }
 
 #[derive(Args, Debug, Clone)]
