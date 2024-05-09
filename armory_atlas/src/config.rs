@@ -48,9 +48,8 @@ pub fn write_config(app_config: &AppConfig, password: &str) -> anyhow::Result<()
         println!("Config file does not exist. Creating it...");
         create_config_file(&path)?;
     }
-    
+
     let config = toml::to_string(app_config)?;
-    
 
     let mut file = std::fs::OpenOptions::new().write(true).open(path)?;
 

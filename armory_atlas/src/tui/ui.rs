@@ -112,8 +112,5 @@ pub fn ui(
 }
 
 pub fn render_config_page(f: &mut Frame<'_>, app: &App) -> Result<()> {
-    
-    
-    
     Ok(())
 }

@@ -93,7 +93,7 @@ async fn main() -> Result<()> {
             let pool =
                 MySqlPool::connect(format!("mysql://{user}:{password}@{host}/{database}").as_str())
                     .await?;
-            
+
             run_tui(pool).await?;
         }
     };

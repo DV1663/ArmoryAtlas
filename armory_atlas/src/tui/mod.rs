@@ -7,7 +7,7 @@ use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
 use crossterm::{event, execute};
-use log::{error};
+use log::error;
 use ratatui::layout::Constraint;
 use ratatui::prelude::{Backend, CrosstermBackend, Style};
 use ratatui::widgets::{Block, Borders, Row, Table};
@@ -130,8 +130,6 @@ fn get_data(app: &mut App, items: &Option<Vec<ItemProduct>>) -> Result<Table<'st
 }
 
 async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<bool> {
-    
-    
     let data = match app.db_handler.get_items() {
         Ok(data) => data,
         Err(err) => {

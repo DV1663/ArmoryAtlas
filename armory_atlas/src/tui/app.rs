@@ -41,7 +41,7 @@ impl App {
             config.get("host")?,
             config.get("database")?,
         );
-        
+
         let db_handler = DBHandler::new()?;
         Ok(Self {
             db_handler,

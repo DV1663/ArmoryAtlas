@@ -8,7 +8,7 @@ use crate::db_handler::DBHandler;
 
 pub async fn insert_leandings(pool: &MySqlPool, num_leandings: usize) -> anyhow::Result<()> {
     let leandings = generate_leandings(num_leandings)?;
-    
+
     for leanding in leandings {
         sqlx::query("INSERT INTO Leandings (LeandingID, UserID, ProductID, BorrowingDate, ReturnDate) VALUES (UUID_TO_BIN(UUID()), ?, ?, ?, ?)")
             .bind(&leanding.user_id)
@@ -23,11 +23,11 @@ pub async fn insert_leandings(pool: &MySqlPool, num_leandings: usize) -> anyhow:
 
 fn generate_leandings(num_leandings: usize) -> anyhow::Result<Vec<Loans>> {
     let mut leandings = Vec::new();
-    
+
     for _ in 0..num_leandings {
         leandings.push(Loans::new_random()?);
     }
-    
+
     Ok(leandings)
 }
 
@@ -41,7 +41,12 @@ pub struct Loans {
 }
 
 impl Loans {
-    pub fn new(user_id: String, product_id: String, borrowing_date: NaiveDate, return_date: Option<NaiveDate>) -> Self {
+    pub fn new(
+        user_id: String,
+        product_id: String,
+        borrowing_date: NaiveDate,
+        return_date: Option<NaiveDate>,
+    ) -> Self {
         Self {
             leanding_id: String::new(),
             user_id,
@@ -75,13 +80,13 @@ impl Loans {
         let date = NaiveDate::from_ymd_opt(year, month, day).unwrap();
         date
     }
-    
+
     pub fn new_random() -> anyhow::Result<Self> {
         let db = DBHandler::new()?;
         let product = db.get_rand_item()?;
         let borrowing_date = Loans::generate_random_date();
         let user = db.get_rand_user()?;
-        
+
         Ok(Self {
             leanding_id: String::new(),
             user_id: user.ssn,
