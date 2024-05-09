@@ -16,13 +16,44 @@ class ItemProduct:
 
 
 class InStockSize:
-    def __init__(self, product_id, size, totIn):
+    def __init__(self, product_id, size, tot_in):
         self.product_id = product_id
         self.size = size
-        self.totIn = totIn
+        self.tot_in = tot_in
 
     def __repr__(self):
-        return f"Product ID: {self.product_id}, Size: {self.size}, In Stock: {self.totIn}"
+        return f"Product ID: {self.product_id}, Size: {self.size}, In Stock: {self.tot_in}"
+
+
+class TotBorrowes:
+    def __init__(self, ssn, name, tot_borrowes, curr_borrowes):
+        self.ssn = ssn
+        self.name = name
+        self.tot_borrowes = tot_borrowes
+        self.curr_borrowes = curr_borrowes
+
+    def __repr__(self):
+        return f"SSN: {self.ssn}, Name: {self.name}, Total Borrowes: {self.tot_borrowes}, Current Borrowes: {self.curr_borrowes}"
+
+
+class User:
+    def __init__(self, ssn, name):
+        self.ssn = ssn
+        self.name = name
+
+    def __repr__(self):
+        return f"SSN: {self.ssn}, Name: {self.name}"
+
+
+class Items:
+    def __init__(self, item_id, product_id, size, level_of_use):
+        self.item_id = uuid.UUID(bytes=item_id).__str__()
+        self.product_id = product_id
+        self.size = size
+        self.level_of_use = level_of_use
+
+    def __repr__(self):
+        return f"Items({self.item_id}, {self.product_id}, {self.size}, {self.level_of_use})"
 
 
 class DBHandler:
@@ -84,7 +115,7 @@ class DBHandler:
 
     """This query will only return the information for the product with the specified ID and the total count of items 
     in stock for a given size for that product."""
-    def get_in_stock_size(self, function_name: str, product_id: str, size: str) -> list[InStockSize]:
+    def get_in_stock_size(self, product_id: str, size: str) -> list[InStockSize]:
         query = f"""
             SELECT 
                     p.ProductID as product_id,
@@ -101,6 +132,37 @@ class DBHandler:
         size_stock_list = [InStockSize(*size_stock) for size_stock in size_stock]
         return size_stock_list
 
+    """A view (number_of_borrowes) implwmented in mysql that we can use to get the total 
+    number of borrowes for each user."""
+    def number_of_borrowes(self) -> list[TotBorrowes]:
+        query = """
+            SELECT * FROM number_of_borrowes;
+                    """
+
+        self.cursor.execute(query)
+        borrowes = self.cursor.fetchall()
+        borrowes_list = [TotBorrowes(*borrowes) for borrowes in borrowes]
+        return borrowes_list
+
+    def get_rand_user(self) -> list[User]:
+        query = """
+            SELECT * FROM Users ORDER BY RAND() LIMIT 1;
+                    """
+
+        self.cursor.execute(query)
+        users = self.cursor.fetchall()
+        users_list = [User(*users) for users in users]
+        return users_list
+
+    def get_rand_item_not_borrowed(self) -> list[Items]:
+        query = """
+                    CALL GetAvailableItems();
+                            """
+
+        self.cursor.execute(query)
+        items = self.cursor.fetchall()
+        items_list = [Items(*item) for item in items]
+        return items_list
 
     @staticmethod
     def get_config() -> dict:
@@ -118,4 +180,7 @@ class DBHandler:
 if __name__ == "__main__":
     db = DBHandler()
     print(db.get_items())
-    print(db.get_in_stock_size("in_stock_for_product", "M240001-3708453", "XL"))
+    print(db.get_in_stock_size("M240001-3708453", "XL"))
+    print(db.number_of_borrowes())
+    print(db.get_rand_user())
+    print(db.get_rand_item_not_borrowed())
