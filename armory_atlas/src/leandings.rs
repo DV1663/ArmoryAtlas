@@ -7,29 +7,18 @@ use sqlx_mysql::MySqlPool;
 use crate::db_handler::DBHandler;
 
 pub async fn insert_leandings(pool: &MySqlPool, num_leandings: usize) -> anyhow::Result<()> {
-    let leandings = generate_leandings(num_leandings)?;
-    dbg!(&leandings);
-
-    for leanding in leandings {
-        sqlx::query("INSERT INTO Lendings (LeandingID, UserID, ProductID, BorrowingDate, ReturnDate) VALUES (UUID_TO_BIN(UUID()), ?, ?, ?, ?)")
+    for _ in 0..num_leandings {
+        let leanding = Loans::new_random()?;
+        dbg!(&leanding);
+        sqlx::query("INSERT INTO Lendings (LendingID, SSN, ItemID, BorrowingDate) VALUES (UUID_TO_BIN(UUID()), ?, UUID_TO_BIN(?), ?)")
             .bind(&leanding.user_id)
             .bind(&leanding.product_id)
             .bind(leanding.borrowing_date)
-            .bind(leanding.return_date)
             .execute(pool)
             .await?;
     }
+    
     Ok(())
-}
-
-fn generate_leandings(num_leandings: usize) -> anyhow::Result<Vec<Loans>> {
-    let mut leandings = Vec::new();
-
-    for _ in 0..num_leandings {
-        leandings.push(Loans::new_random()?);
-    }
-
-    Ok(leandings)
 }
 
 #[derive(Debug, FromRow, FromPyObject)]
@@ -87,13 +76,21 @@ impl Loans {
         let product = db.get_rand_item()?;
         let borrowing_date = Loans::generate_random_date();
         let user = db.get_rand_user()?;
+        
+        // randomly choose if the item is reutrned or not
+        let mut rng = rand::thread_rng();
+        let return_date = if rng.gen_bool(0.2) {
+            Some(Loans::generate_random_date())
+        } else {
+            None
+        };
 
         Ok(Self {
             leanding_id: String::new(),
             user_id: user.ssn,
             product_id: product.item_id,
             borrowing_date,
-            return_date: None,
+            return_date,
         })
     }
 }

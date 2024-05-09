@@ -49,7 +49,7 @@ class User:
 
 class Items:
     def __init__(self, item_id, product_id, size, level_of_use):
-        self.item_id = uuid.UUID(bytes=item_id).__str__()
+        self.item_id = item_id
         self.product_id = product_id
         self.size = size
         self.level_of_use = level_of_use
@@ -171,20 +171,11 @@ class DBHandler:
 
     def get_rand_item(self) -> Items:
         query = """
-            SELECT
-                i.ItemID,
-                i.ProductID,
-                i.Size,
-                i.LevelOfUse
-            FROM
-                Items AS i
-            LEFT JOIN
-                Lendings AS l ON i.ItemID = l.ItemID
-            WHERE
-                l.ItemID IS NULL OR l.ReturnDate < CURDATE()
-            group by
-                rand(), i.ItemID
-            LIMIT 1;
+            SELECT BIN_TO_UUID(i.ItemID) as ItemID, i.ProductID, i.Size, i.LevelOfUse
+            FROM Items i
+            WHERE i.ItemID NOT IN (
+                SELECT ItemID FROM Lendings WHERE ReturnDate IS NULL
+            ) limit 1;
         """
 
         # Execute the stored procedure
@@ -219,7 +210,7 @@ class DBHandler:
 
     def test(self):
         query = """
-            SELECT * FROM Lendings;
+            SELECT BIN_TO_UUID(LendingID), SSN, BIN_TO_UUID(ItemID), BorrowingDate, ReturnDate FROM Lendings;
                     """
 
         self.cursor.execute(query)
@@ -230,9 +221,9 @@ class DBHandler:
 
 if __name__ == "__main__":
     db = DBHandler()
-    #print(db.get_items())
-    #print(db.get_rand_item())
-    #print(db.get_in_stock_size("M240001-3708453", "XL"))
-    #print(db.number_of_borrowes())
-    #print(db.get_rand_user())
+    print(db.get_items())
+    print(db.get_rand_item())
+    print(db.get_in_stock_size("M240001-3708453", "XL"))
+    print(db.number_of_borrowes())
+    print(db.get_rand_user())
     print(db.test())
