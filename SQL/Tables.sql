@@ -2,12 +2,11 @@
 # ======== Table Users ========
 CREATE TABLE Users (
   -- Primary key
-	SSN VARCHAR(15) NOT NULL,
+	SSN VARCHAR(11) NOT NULL,
     
 	-- Attributes
   Name VARCHAR(250) NOT NULL,
-  # Email VARCHAR(250) NOT NULL,
-    
+
   PRIMARY KEY(SSN)
 );
 
@@ -15,10 +14,10 @@ CREATE TABLE Users (
 # ======== Table Products ========
 CREATE TABLE Products (
   -- Primary key
-	ProductID VARCHAR(50) NOT NULL,
+	ProductID VARCHAR(16) NOT NULL,
     
 	-- Attributes
-  NameOfProduct VARCHAR(50) NOT NULL,
+  NameOfProduct VARCHAR(250) NOT NULL,
   Type VARCHAR(250) NOT NULL,
     
   PRIMARY KEY(ProductID)
@@ -31,10 +30,10 @@ CREATE TABLE Items (
 	ItemID BINARY(16) NOT NULL,
 
   -- Foreign Key    
-  ProductID VARCHAR(50) NOT NULL,
+  ProductID VARCHAR(16) NOT NULL,
     
 	-- Attributes
-  Size VARCHAR(5),
+  Size VARCHAR(4),
   LevelOfUse FLOAT NOT NULL,
     
   PRIMARY KEY(ItemID),
@@ -50,12 +49,12 @@ CREATE TABLE Lendings (
 	LendingID BINARY(16) NOT NULL,
     
   -- Foreign Key
-	SSN VARCHAR(15) NOT NULL,
+	SSN VARCHAR(11) NOT NULL,
   ItemID BINARY(16) NOT NULL,
     
 	-- Attributes
 	BorrowingDate DATE NOT NULL,
-  ReturnDate DATE,
+    ReturnDate DATE,
 
 	PRIMARY KEY(LendingID),
     
@@ -64,4 +63,6 @@ CREATE TABLE Lendings (
 	CONSTRAINT FK2
 		FOREIGN KEY(ItemID) REFERENCES Items(ItemID)        
 );
+
+
 

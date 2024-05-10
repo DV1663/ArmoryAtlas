@@ -58,6 +58,20 @@ class Items:
         return f"Items({self.item_id}, {self.product_id}, {self.size}, {self.level_of_use})"
 
 
+class AllBorrowed:
+    def __init__(self, lending_id, name, item_id, product_name, size, borrow_date, return_date):
+        self.lending_id = lending_id
+        self.name = name
+        self.item_id = item_id
+        self.product_name = product_name
+        self.size = size
+        self.borrow_date = borrow_date
+        self.return_date = return_date
+
+    def __repr__(self):
+        return f"Items({self.lending_id}, {self.name}, {self.item_id}, {self.product_name}, {self.size}, {self.borrow_date}, {self.return_date})"
+
+
 class DBHandler:
     """
     The `DBHandler` class is responsible for interacting with the MySQL database
@@ -92,6 +106,46 @@ class DBHandler:
 
         self.cursor = self.db.cursor()
 
+    def get_rand_user(self) -> User:
+        query = """
+            SELECT * FROM Users ORDER BY RAND() LIMIT 1;
+                    """
+
+        self.cursor.execute(query)
+        users = self.cursor.fetchall()
+        users_list = [User(*users) for users in users]
+        return users_list[0]
+
+    def get_rand_item(self) -> Items:
+        query = """
+            SELECT BIN_TO_UUID(i.ItemID) as ItemID, 
+                i.ProductID, 
+                i.Size, 
+                i.LevelOfUse
+            FROM Items i
+            WHERE i.ItemID NOT IN (
+                SELECT ItemID FROM Lendings WHERE ReturnDate IS NULL
+            ) limit 1;
+        """
+
+        # Execute the stored procedure
+        self.cursor.execute(query)
+
+        # Initialize the list to hold items
+        items_list = []
+
+        # Fetch all sets of results
+        while True:
+            # Fetch all rows from the current result set
+            items = self.cursor.fetchall()
+            items_list.extend([Items(*item) for item in items])
+
+            # Check if there are more results
+            if self.cursor.nextset() is None:
+                break
+
+        return items_list[0]
+
     def get_items(self) -> list[ItemProduct]:
         query = """
             SELECT
@@ -114,9 +168,6 @@ class DBHandler:
         items = self.cursor.fetchall()
         item_list = [ItemProduct(*item) for item in items]
         return item_list
-
-    """This query will only return the information for the product with the specified ID and the total count of items 
-    in stock for a given size for that product."""
 
     def get_in_stock_size(self, product_id: str, size: str) -> list[InStockSize] | mysql.connector.Error:
         query = f"""
@@ -146,8 +197,23 @@ class DBHandler:
             print("Error: ", err)
             return err
 
-    """A view (number_of_borrowes) implwmented in mysql that we can use to get the total 
-    number of borrowes for each user."""
+    def return_item(self, lending_id: str):
+        query = f"""
+            CALL return_item('{lending_id}');
+        """
+
+        # Execute the stored procedure
+        self.cursor.execute(query, multi=True)
+
+    def user_all_borrowed(self, ssn: str) -> list[AllBorrowed]:
+        query = f"""
+            CALL show_borrowed('{ssn}');
+                    """
+
+        self.cursor.execute(query, multi=True)
+        borrowed = self.cursor.fetchall()
+        borrowed_list = [AllBorrowed(*borrowed) for borrowed in borrowed]
+        return borrowed_list
 
     def number_of_borrowes(self) -> list[TotBorrowes]:
         query = """
@@ -158,54 +224,6 @@ class DBHandler:
         borrowes = self.cursor.fetchall()
         borrowes_list = [TotBorrowes(*borrowes) for borrowes in borrowes]
         return borrowes_list
-
-    def get_rand_user(self) -> User:
-        query = """
-            SELECT * FROM Users ORDER BY RAND() LIMIT 1;
-                    """
-
-        self.cursor.execute(query)
-        users = self.cursor.fetchall()
-        users_list = [User(*users) for users in users]
-        return users_list[0]
-
-    def get_rand_item(self) -> Items:
-        query = """
-            SELECT BIN_TO_UUID(i.ItemID) as ItemID, i.ProductID, i.Size, i.LevelOfUse
-            FROM Items i
-            WHERE i.ItemID NOT IN (
-                SELECT ItemID FROM Lendings WHERE ReturnDate IS NULL
-            ) limit 1;
-        """
-
-        # Execute the stored procedure
-        self.cursor.execute(query)
-
-        # Initialize the list to hold items
-        items_list = []
-
-        # Fetch all sets of results
-        while True:
-            # Fetch all rows from the current result set
-            items = self.cursor.fetchall()
-            items_list.extend([Items(*item) for item in items])
-
-            # Check if there are more results
-            if self.cursor.nextset() is None:
-                break
-
-        return items_list[0]
-
-    """ A procedure we call for that updates the returndate to the current date for the item with the specified ID. 
-    a triiger is used in the background"""
-    def return_item(self, lending_id: str):
-        query = f"""
-            CALL return_item('{lending_id}');
-        """
-
-        # Execute the stored procedure
-        self.cursor.execute(query, multi=True)
-
 
 
     @staticmethod
@@ -240,3 +258,4 @@ if __name__ == "__main__":
     print(db.get_rand_user())
     db.return_item("232a3d13-05fd-11ef-ade3-00e04c0003ab") # This is a random UUID (tror den funkar, alltså funktionen)
     print(db.test())
+    print(db.user_all_borrowed("19780630-9568"))
