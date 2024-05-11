@@ -59,17 +59,18 @@ class Items:
 
 
 class AllBorrowed:
-    def __init__(self, lending_id, name, item_id, product_name, size, borrow_date, return_date):
-        self.lending_id = lending_id
+    def __init__(self, lending_id, SSN, name, item_id, product_name, size, borrow_date, return_date):
+        self.lending_id = uuid.UUID(bytes=lending_id).__str__()
+        self.SSN = SSN
         self.name = name
-        self.item_id = item_id
+        self.item_id = uuid.UUID(bytes=item_id).__str__()
         self.product_name = product_name
         self.size = size
         self.borrow_date = borrow_date
         self.return_date = return_date
 
     def __repr__(self):
-        return f"Items({self.lending_id}, {self.name}, {self.item_id}, {self.product_name}, {self.size}, {self.borrow_date}, {self.return_date})"
+        return f"Items({self.lending_id}, {self.SSN}, {self.name}, {self.item_id}, {self.product_name}, {self.size}, {self.borrow_date}, {self.return_date})"
 
 
 class DBHandler:
@@ -207,13 +208,13 @@ class DBHandler:
 
     def user_all_borrowed(self, ssn: str) -> list[AllBorrowed]:
         query = f"""
-            CALL show_borrowed('{ssn}');
+            select * from show_borrowed_view where SSN = ('{ssn}');
                     """
 
-        self.cursor.execute(query, multi=True)
-        borrowed = self.cursor.fetchall()
-        borrowed_list = [AllBorrowed(*borrowed) for borrowed in borrowed]
-        return borrowed_list
+        self.cursor.execute(query)
+        allborrowed = self.cursor.fetchall()
+        allborrowed_list = [AllBorrowed(*allborrowed) for allborrowed in allborrowed]
+        return allborrowed_list
 
     def number_of_borrowes(self) -> list[TotBorrowes]:
         query = """
@@ -258,4 +259,4 @@ if __name__ == "__main__":
     print(db.get_rand_user())
     db.return_item("232a3d13-05fd-11ef-ade3-00e04c0003ab") # This is a random UUID (tror den funkar, alltså funktionen)
     print(db.test())
-    print(db.user_all_borrowed("19780630-9568"))
+    print(db.user_all_borrowed('660520-0150'))
