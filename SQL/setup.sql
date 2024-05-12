@@ -211,38 +211,6 @@ BEGIN
 END //
 DELIMITER ;
 
-
-# ==========================================
-# ============ Procedure 2 =================
-# SHOW ALL ITEMS BORROWED BY A SPECIFIC USER
-# ==========================================
-
-DELIMITER //
-CREATE PROCEDURE show_borrowed (IN SSN VARCHAR(15))
-BEGIN
-    SELECT
-        l.LendingID,
-        u.Name,
-        i.ItemID,
-        p.NameOfProduct,
-        i.Size,
-        l.BorrowingDate,
-        l.ReturnDate
-    FROM
-        Users u
-            JOIN
-        Lendings l
-            JOIN
-        Items i ON l.ItemID = i.ItemID
-            JOIN
-        Products p ON i.ProductID = p.ProductID
-    WHERE
-        u.SSN = SSN
-    ORDER BY
-        i.ItemID;
-END //
-DELIMITER ;
-
 # ============================================================================================================== #
 # ============================================================================================================== #
 
@@ -278,5 +246,32 @@ GROUP BY
 ORDER BY
     TotalLendings DESC;
 
+
+# ==========================================
+# ============ View 2 =================
+# SHOW ALL ITEMS BORROWED BY A SPECIFIC USER
+# ==========================================
+CREATE VIEW show_borrowed_view AS
+    SELECT
+        l.LendingID,
+        u.SSN,
+        u.Name,
+        i.ItemID,
+        p.NameOfProduct,
+        i.Size,
+        l.BorrowingDate,
+        l.ReturnDate
+    FROM
+        Users u
+    JOIN
+        Lendings l ON u.SSN = l.SSN
+    JOIN
+        Items i ON l.ItemID = i.ItemID
+    JOIN
+        Products p ON i.ProductID = p.ProductID;
+
+
 # ============================================================================================================== #
 # ============================================================================================================== #
+
+
