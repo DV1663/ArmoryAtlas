@@ -48,14 +48,14 @@ class User:
 
 
 class Items:
-    def __init__(self, item_id, product_id, size, level_of_use):
+    def __init__(self, item_id, product_id, size, quality):
         self.item_id = item_id
         self.product_id = product_id
         self.size = size
-        self.level_of_use = level_of_use
+        self.quality = quality
 
     def __repr__(self):
-        return f"Items({self.item_id}, {self.product_id}, {self.size}, {self.level_of_use})"
+        return f"Items({self.item_id}, {self.product_id}, {self.size}, {self.quality})"
 
 
 class AllBorrowed:
@@ -122,7 +122,7 @@ class DBHandler:
             SELECT BIN_TO_UUID(i.ItemID) as ItemID, 
                 i.ProductID, 
                 i.Size, 
-                i.LevelOfUse
+                i.Quality
             FROM Items i
             WHERE i.ItemID NOT IN (
                 SELECT ItemID FROM Lendings WHERE ReturnDate IS NULL

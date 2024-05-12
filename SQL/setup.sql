@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS Items (
 
     -- Attributes
     Size VARCHAR(4),
-    LevelOfUse FLOAT NOT NULL,
+    Quality FLOAT NOT NULL,
 
     PRIMARY KEY(ItemID),
 
@@ -121,12 +121,12 @@ DELIMITER ;
 
 # ================================
 # ========== Trigger 2 ===========
-# UPDATE LEVEL OF USE AFTER RETURN
+# UPDATE CONDITION AFTER RETURN
 # ================================
 
 
 DELIMITER //
-CREATE TRIGGER update_level_of_use
+CREATE TRIGGER update_quality
     AFTER UPDATE ON Lendings
     FOR EACH ROW
     BEGIN
@@ -134,7 +134,7 @@ CREATE TRIGGER update_level_of_use
             UPDATE
                 Items
             SET
-                LevelOfUse = (LevelOfUse + 0.10)
+                Quality = (Quality - 0.10)
             WHERE
                 ItemID = NEW.ItemID;
         END IF;
