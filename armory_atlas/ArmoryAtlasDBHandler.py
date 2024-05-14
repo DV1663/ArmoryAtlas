@@ -223,6 +223,7 @@ class DBHandler:
         borrowes_list = [TotBorrowes(*borrowes) for borrowes in borrowes]
         return borrowes_list
 
+
     @staticmethod
     def get_config() -> dict:
         if os.name == 'nt':

@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS Items (
 
     -- Attributes
     Size VARCHAR(4),
-    LevelOfUse FLOAT NOT NULL,
+    Quality FLOAT NOT NULL,
 
     PRIMARY KEY(ItemID),
 
@@ -121,12 +121,12 @@ DELIMITER ;
 
 # ================================
 # ========== Trigger 2 ===========
-# UPDATE LEVEL OF USE AFTER RETURN
+# UPDATE CONDITION AFTER RETURN
 # ================================
 
 
 DELIMITER //
-CREATE TRIGGER update_level_of_use
+CREATE TRIGGER update_quality
     AFTER UPDATE ON Lendings
     FOR EACH ROW
     BEGIN
@@ -134,7 +134,7 @@ CREATE TRIGGER update_level_of_use
             UPDATE
                 Items
             SET
-                LevelOfUse = (LevelOfUse + 0.10)
+                Quality = (Quality - 0.10)
             WHERE
                 ItemID = NEW.ItemID;
         END IF;
@@ -211,38 +211,6 @@ BEGIN
 END //
 DELIMITER ;
 
-
-# ==========================================
-# ============ Procedure 2 =================
-# SHOW ALL ITEMS BORROWED BY A SPECIFIC USER
-# ==========================================
-
-DELIMITER //
-CREATE PROCEDURE show_borrowed (IN SSN VARCHAR(15))
-BEGIN
-    SELECT
-        l.LendingID,
-        u.Name,
-        i.ItemID,
-        p.NameOfProduct,
-        i.Size,
-        l.BorrowingDate,
-        l.ReturnDate
-    FROM
-        Users u
-            JOIN
-        Lendings l
-            JOIN
-        Items i ON l.ItemID = i.ItemID
-            JOIN
-        Products p ON i.ProductID = p.ProductID
-    WHERE
-        u.SSN = SSN
-    ORDER BY
-        i.ItemID;
-END //
-DELIMITER ;
-
 # ============================================================================================================== #
 # ============================================================================================================== #
 
@@ -278,5 +246,32 @@ GROUP BY
 ORDER BY
     TotalLendings DESC;
 
+
+# ==========================================
+# ============ View 2 =================
+# SHOW ALL ITEMS BORROWED BY A SPECIFIC USER
+# ==========================================
+CREATE VIEW show_borrowed_view AS
+    SELECT
+        l.LendingID,
+        u.SSN,
+        u.Name,
+        i.ItemID,
+        p.NameOfProduct,
+        i.Size,
+        l.BorrowingDate,
+        l.ReturnDate
+    FROM
+        Users u
+    JOIN
+        Lendings l ON u.SSN = l.SSN
+    JOIN
+        Items i ON l.ItemID = i.ItemID
+    JOIN
+        Products p ON i.ProductID = p.ProductID;
+
+
 # ============================================================================================================== #
 # ============================================================================================================== #
+
+
