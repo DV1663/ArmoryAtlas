@@ -13,31 +13,144 @@ CREATE TABLE `Items` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 */
 
+use std::fmt::Display;
 use anyhow::Result;
-use pyo3::FromPyObject;
+use prettytable::{format, row, Row, Table};
+use pyo3::{FromPyObject, pymethods};
 use rand::Rng;
 use rayon::prelude::*;
-use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use sqlx_mysql::MySqlPool;
+use crate::db_handler::DBHandler;
 
 use crate::products;
 
 pub const SIZES: [&str; 6] = ["XS", "S", "M", "L", "XL", "XXL"];
 
-#[derive(Serialize, Deserialize, Debug, Clone, FromRow, FromPyObject)]
-pub struct Items {
-    #[serde(rename = "ItemID")]
+#[derive(Debug, FromRow, FromPyObject)]
+#[pyo3::pyclass]
+pub struct Item {
     pub item_id: String,
-    #[serde(rename = "ProductID")]
     pub product_id: String,
-    #[serde(rename = "Size")]
     pub size: String,
-    #[serde(rename = "LevelOfUse")]
-    pub level_of_use: f32,
+    pub quality: f32,
 }
 
-pub fn generate_items(num_items: usize) -> Result<Vec<Items>> {
+#[derive(Clone)]
+pub struct TmpItem {
+    pub item_id: String,
+    pub product_id: String,
+    pub size: String,
+    pub quality: f32,
+}
+
+impl From<&Item> for TmpItem {
+    fn from(item: &Item) -> Self {
+        Self {
+            item_id: item.item_id.clone(),
+            product_id: item.product_id.clone(),
+            size: item.size.clone(),
+            quality: item.quality,
+        }
+    }
+}
+
+impl From<TmpItem> for Item {
+    fn from(tmp_item: TmpItem) -> Self {
+        Self {
+            item_id: tmp_item.item_id,
+            product_id: tmp_item.product_id,
+            size: tmp_item.size,
+            quality: tmp_item.quality,
+        }
+    }
+}
+
+#[pymethods]
+impl Item {
+    #[new]
+    pub fn new(item_id: String, product_id: String, size: String, quality: f32) -> Self {
+        Self {
+            item_id,
+            product_id,
+            size,
+            quality,
+        }
+    }
+    
+    #[getter(item_id)]
+    pub fn get_item_id(&self) -> String {
+        self.item_id.clone()
+    }
+    
+    #[getter(product_id)]
+    pub fn get_product_id(&self) -> String {
+        self.product_id.clone()
+    }
+    
+    #[getter(size)]
+    pub fn get_size(&self) -> String {
+        self.size.clone()
+    }
+    
+    #[getter(quality)]
+    pub fn get_quality(&self) -> f32 {
+        self.quality
+    }
+    
+    #[pyo3(name = "__repr__")]
+    pub fn repr(&self) -> String {
+        self.to_string()
+    }
+}
+
+impl From<Item> for Row {
+    fn from(item: Item) -> Self {
+        if item.item_id.is_empty() {
+            row!["WILL_BE_GENERATED", item.product_id, item.size, item.quality]
+        } else {
+            row![item.item_id, item.product_id, item.size, item.quality]
+        }
+    }
+}
+
+pub struct Items(Vec<Item>);
+
+impl From<Vec<Item>> for Items {
+    fn from(items: Vec<Item>) -> Self {
+        Self(items)
+    }
+}
+
+impl From<Items> for Table {
+    fn from(items: Items) -> Self {
+        let mut table = Table::new();
+        table.add_row(row!["ItemID", "ProductID", "Size", "Quality"]);
+        for item in items.0 {
+            table.add_row(item.into());
+        }
+        table
+    }
+}
+
+impl Display for Item {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.item_id.is_empty() {
+            write!(
+                f,
+                "Item(item_id=\"WILL_BE_GENERATED\", product_id={}, size={}, quality={})",
+                self.product_id, self.size, self.quality
+            )
+        } else {
+            write!(
+                f,
+                "Item(item_id={}, product_id={}, size={}, quality={})",
+                self.item_id, self.product_id, self.size, self.quality
+            )
+        }
+    }
+}
+
+pub fn generate_items(num_items: usize) -> Result<Vec<Item>> {
     let products = products::get_products()?;
 
     println!(
@@ -57,11 +170,11 @@ pub fn generate_items(num_items: usize) -> Result<Vec<Items>> {
             let mut next_idx = 0;
 
             for _ in 0..num_items {
-                let item = Items {
+                let item = Item {
                     item_id: String::new(),
                     product_id: product.product_id.clone(),
                     size: SIZES[next_idx].to_string(),
-                    level_of_use: rng.gen_range(0.0..1.0),
+                    quality: rng.gen_range(0.0..1.0),
                 };
 
                 product_items.push(item);
@@ -71,7 +184,7 @@ pub fn generate_items(num_items: usize) -> Result<Vec<Items>> {
 
             product_items
         })
-        .collect::<Vec<Vec<Items>>>();
+        .collect::<Vec<Vec<Item>>>();
 
     for product_items in items_iter {
         items.extend(product_items);
@@ -80,16 +193,27 @@ pub fn generate_items(num_items: usize) -> Result<Vec<Items>> {
     Ok(items)
 }
 
-pub async fn insert_items(pool: &MySqlPool, num_items: usize) -> Result<()> {
+pub async fn insert_items(db_handler: &DBHandler, num_items: usize) -> Result<()> {
     let items = generate_items(num_items)?;
-
+    
+    println!("Inserting these items:");
+    let mut table_vec = Vec::new();
+    let mut items_vec = Vec::new();
+    
     for item in &items {
-        sqlx::query("INSERT INTO Items (ItemID, ProductID, Size, LevelOfUse) VALUES (UUID_TO_BIN(UUID()), ?, ?, ?)")
-            .bind(&item.product_id)
-            .bind(&item.size)
-            .bind(item.level_of_use)
-            .execute(pool)
-            .await?;
+        let tmp = TmpItem::from(item);
+        let item = Item::from(tmp.clone());
+        let item_new = Item::from(tmp);
+        table_vec.push(item_new);
+        items_vec.push(item);
+    }
+
+    let table = Table::from(Items::from(table_vec)).to_string();
+    
+    println!("{}", table);
+    
+    for item in items {
+        db_handler.insert_item(item)?;
     }
 
     Ok(())

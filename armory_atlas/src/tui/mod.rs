@@ -170,7 +170,7 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::R
                             continue;
                         }
                         // search database and displat the result
-                        let search_result = search_items(&app.pool, &query).await;
+                        let search_result = search_items(&query).await;
                         match search_result {
                             Ok(items) => {
                                 data_to_display = items.clone();

@@ -1,0 +1,4 @@
+user = "armoryatlas"
+host = "localhost:3306"
+database = "ArmoryAtlas"
+password = "armoryatlas" # this is only because adding keyring support in pythoon is a pain in the rear

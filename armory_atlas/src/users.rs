@@ -3,18 +3,15 @@ use chrono::{Datelike, NaiveDate};
 use pyo3::FromPyObject;
 use rand::Rng;
 use sqlx::FromRow;
-use sqlx_mysql::MySqlPool;
+use crate::db_handler::DBHandler;
 
-pub async fn insert_users(pool: &MySqlPool, num_users: usize) -> Result<()> {
+pub async fn insert_users(db_handler: &DBHandler, num_users: usize) -> Result<()> {
     let users = generate_users(num_users);
-
+    
     for user in users {
-        sqlx::query("INSERT INTO Users (SSN, Name) VALUES (?, ?)")
-            .bind(&user.ssn)
-            .bind(&user.name)
-            .execute(pool)
-            .await?;
+        db_handler.insert_user(user)?;
     }
+
     Ok(())
 }
 
@@ -29,19 +26,15 @@ fn generate_users(num_users: usize) -> Vec<Users> {
 }
 
 #[derive(Debug, FromRow, FromPyObject)]
+#[pyo3::pyclass]
 pub struct Users {
     pub ssn: String,
     pub name: String,
 }
 
+#[pyo3::pymethods]
 impl Users {
-    pub fn new(name: String, ssn: SSN) -> Self {
-        Self {
-            ssn: ssn.into(),
-            name,
-        }
-    }
-
+    #[new]
     pub fn new_random() -> Self {
         let gender = Self::generate_random_gender();
         let (first_name, last_name) = Self::generate_random_name(gender);
@@ -51,23 +44,15 @@ impl Users {
         }
     }
 
+    #[staticmethod]
     fn generate_random_gender() -> bool {
         let mut rng = rand::thread_rng();
         // Randomly generates true or false, where true represents a man and false represents a woman.
         rng.gen_bool(0.5) // 50% chance for each gender
     }
 
+    #[staticmethod]
     fn generate_random_name(gender: bool) -> (String, String) {
-        let first_names = ["James",
-            "Mary",
-            "John",
-            "Patricia",
-            "Robert",
-            "Jennifer",
-            "Michael",
-            "Linda",
-            "William",
-            "Elizabeth"];
         let last_names = ["Smith",
             "Johnson",
             "Williams",
@@ -81,12 +66,38 @@ impl Users {
 
         // Get a random number generator
         let mut rng = rand::thread_rng();
+        
+        let first_name = {
+            let male_names: Vec<&str> = vec![
+                "Liam", "Noah", "Oliver", "Elijah", "William",
+                "James", "Benjamin", "Lucas", "Henry", "Alexander"
+            ];
 
-        // Choose a random first name and last name from the lists
-        let first_name = first_names[rng.gen_range(0..first_names.len())].to_string();
+            let female_names: Vec<&str> = vec![
+                "Olivia", "Emma", "Ava", "Charlotte", "Sophia",
+                "Amelia", "Isabella", "Mia", "Evelyn", "Harper"
+            ];
+            
+            if gender {
+                male_names[rng.gen_range(0..male_names.len())].to_string()
+            } else {
+                female_names[rng.gen_range(0..female_names.len())].to_string()
+            }
+        };
+        
         let last_name = last_names[rng.gen_range(0..last_names.len())].to_string();
 
         (first_name, last_name)
+    }
+    
+    #[getter(ssn)]
+    pub fn get_ssn(&self) -> String {
+        self.ssn.clone()
+    }
+    
+    #[getter(name)]
+    pub fn get_name(&self) -> String {
+        self.name.clone()
     }
 }
 

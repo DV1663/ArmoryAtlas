@@ -19,10 +19,15 @@ pub mod products;
 pub mod tui;
 pub mod users;
 
-pub const CONFIG_FILE: &str = ".config/armoryatlas/config.toml";
+pub const CONFIG_DIR: &str = ".config/armoryatlas";
+pub const CONFIG_FILE: &str = "config.toml";
+pub const PRODUCTS_FILE: &str = "products.json";
+pub const DEFAULT_PRODUCTS: &str = include_str!("../../default-products.json");
+pub const DEFAULT_CONFIG: &str = include_str!("../../default-config.toml");
 pub const DATABASE_HANDLER: &str = include_str!("../ArmoryAtlasDBHandler.py");
 
 use sqlx::FromRow;
+use crate::db_handler::DBHandler;
 
 #[derive(Debug, FromRow, Clone, FromPyObject)]
 pub struct ItemProduct {
@@ -33,55 +38,43 @@ pub struct ItemProduct {
     size: String,
 }
 
-pub async fn search_items(pool: &MySqlPool, search_param: &str) -> Result<Vec<ItemProduct>> {
-    let query = format!(
-        "
-        SELECT
-            i.ProductID as product_id,
-            p.NameOfProduct AS product_name,
-            p.Type AS product_type,
-            i.Quantity as quantity,
-            i.Size AS size
-        FROM
-            Products p
-                JOIN
-            (SELECT ProductID, Size, count(*) as Quantity from Items group by ProductID, Size)
-                AS
-                i ON p.ProductID = i.ProductID
-        WHERE
-            i.Quantity > 0
-            AND
-            (
-                p.NameOfProduct LIKE '%{search_param}%' OR
-                p.Type LIKE '%{search_param}%' OR
-                i.Size LIKE '%{search_param}%'
-            )
-        ORDER BY
-            p.NameOfProduct
-    "
-    );
-
-    let items: Vec<ItemProduct> = sqlx::query_as::<_, ItemProduct>(query.as_str())
-        .fetch_all(pool)
-        .await?;
+pub async fn search_items(search_param: &str) -> Result<Vec<ItemProduct>> {
+    let items = DBHandler::new()?.search_items(search_param)?;
 
     Ok(items)
 }
 
-pub async fn generate_test_data(args: GenerateArgs, pool: &MySqlPool) -> Result<()> {
+pub async fn generate_test_data(args: GenerateArgs, db_handler: DBHandler) -> Result<()> {
     match args.subcommands {
-        Some(GenerateSubCommands::Products) => insert_products(pool).await?,
+        Some(GenerateSubCommands::Products) => insert_products(&db_handler).await?,
+        
         Some(GenerateSubCommands::Items(sub_args)) => {
-            insert_items(pool, sub_args.num_items).await?
+            insert_items(&db_handler, sub_args.num_items).await?
         }
+        
         Some(GenerateSubCommands::Users(sub_args)) => {
-            users::insert_users(pool, sub_args.num_users).await?
+            users::insert_users(&db_handler, sub_args.num_users).await?
         },
+        
         Some(GenerateSubCommands::Loans(sub_args)) => {
             println!("Inserting {} loans", sub_args.num_loans);
-            leandings::insert_leandings(pool, sub_args.num_loans).await?
+            leandings::insert_leandings(&db_handler, sub_args.num_loans).await?
         }
-        _ => {}
+        
+        _ => {
+            println!("No subcommand provided. Generating for all tables with default values...");
+            
+            match insert_products(&db_handler).await {
+                Ok(_) => {}
+                Err(e) => {
+                    println!("Error inserting products: {}\nProducts might already be in the database", e);
+                }
+            }
+            
+            insert_items(&db_handler, 10).await?;
+            users::insert_users(&db_handler, 10).await?;
+            leandings::insert_leandings(&db_handler, 10).await?;
+        }
     }
 
     Ok(())

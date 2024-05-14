@@ -1,9 +1,10 @@
-use crate::CONFIG_FILE;
+use std::io::Write;
+use std::path::PathBuf;
+
 use clap::Args;
 use config::Config;
 use serde::{Deserialize, Serialize};
-use std::io::Write;
-use std::path::PathBuf;
+use crate::{CONFIG_DIR, CONFIG_FILE};
 
 #[derive(Args, Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
@@ -17,10 +18,10 @@ pub struct AppConfig {
 
 pub fn get_config() -> anyhow::Result<Config> {
     #[cfg(not(target_os = "windows"))]
-    let path = PathBuf::new().join(env!("HOME")).join(CONFIG_FILE);
+    let path = PathBuf::new().join(env!("HOME")).join(format!("{CONFIG_DIR}/{CONFIG_FILE}"));
 
     #[cfg(target_os = "windows")]
-    let path = PathBuf::new().join(env!("USERPROFILE")).join(CONFIG_FILE);
+    let path = PathBuf::new().join(env!("USERPROFILE")).join(format!("{CONFIG_DIR}/{CONFIG_FILE}"));
 
     if !path.exists() {
         println!("Config file does not exist. Creating it...");
@@ -39,10 +40,10 @@ pub fn get_config() -> anyhow::Result<Config> {
 
 pub fn write_config(app_config: &AppConfig, password: &str) -> anyhow::Result<()> {
     #[cfg(not(target_os = "windows"))]
-    let path = PathBuf::new().join(env!("HOME")).join(CONFIG_FILE);
+    let path = PathBuf::new().join(env!("HOME")).join(format!("{CONFIG_DIR}/{CONFIG_FILE}"));
 
     #[cfg(target_os = "windows")]
-    let path = PathBuf::new().join(env!("USERPROFILE")).join(CONFIG_FILE);
+    let path = PathBuf::new().join(env!("USERPROFILE")).join(format!("{CONFIG_DIR}/{CONFIG_FILE}"));
 
     if !path.exists() {
         println!("Config file does not exist. Creating it...");

@@ -13,6 +13,8 @@ use chrono::Local;
 use env_logger::{Builder, Env};
 use std::fs::File;
 use std::io::Write;
+use armory_atlas_lib::db_handler::DBHandler;
+use armory_atlas_lib::leandings::insert_leandings;
 
 pub fn setup_logger() -> Result<()> {
     // Get the current timestamp
@@ -59,6 +61,9 @@ async fn main() -> Result<()> {
     );
 
     let password = get_db_pass(&user, &host)?;
+    
+    let db_handler = DBHandler::new()?;
+    
     match cmd.subcommands {
         Some(CommandType::Config(args)) => {
             write_config(&args, &password)?;
@@ -67,7 +72,7 @@ async fn main() -> Result<()> {
             let pool =
                 MySqlPool::connect(format!("mysql://{user}:{password}@{host}/{database}").as_str())
                     .await?;
-            generate_test_data(args, &pool).await?;
+            generate_test_data(args, db_handler).await?;
         }
         Some(CommandType::Manage(args)) => {
             let pool =
@@ -94,7 +99,7 @@ async fn main() -> Result<()> {
                 MySqlPool::connect(format!("mysql://{user}:{password}@{host}/{database}").as_str())
                     .await?;
 
-            run_tui(pool).await?;
+            //run_tui(pool).await?;
         }
     };
 
