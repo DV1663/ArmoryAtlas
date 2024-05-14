@@ -2,7 +2,6 @@ use anyhow::Result;
 use chrono::{Datelike, NaiveDate};
 use pyo3::FromPyObject;
 use rand::Rng;
-use sqlx::FromRow;
 use crate::db_handler::DBHandler;
 
 pub fn insert_users(db_handler: &DBHandler, num_users: usize) -> Result<()> {
