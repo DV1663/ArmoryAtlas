@@ -25,6 +25,8 @@ jobs:
         target: [x86_64, x86, aarch64, armv7, s390x, ppc64le]
     steps:
       - uses: actions/checkout@v4
+      - name: Install OpenSSL
+        run: sudo apt-get update && sudo apt-get install -y openssl libssl-dev
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -50,6 +52,8 @@ jobs:
         target: [x64, x86]
     steps:
       - uses: actions/checkout@v4
+      - name: Install OpenSSL
+        run: choco install openssl
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -75,6 +79,8 @@ jobs:
         target: [x86_64, aarch64]
     steps:
       - uses: actions/checkout@v4
+      - name: Install OpenSSL
+        run: brew install openssl
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -92,7 +98,6 @@ jobs:
           name: wheels-macos-${{ matrix.target }}
           path: ${{ env.WHEEL_PATH }}
 
-# m1 mac
   macos-m1:
     runs-on: macos-14
     strategy:
@@ -100,6 +105,8 @@ jobs:
         target: [aarch64-apple-darwin]
     steps:
       - uses: actions/checkout@v4
+      - name: Install OpenSSL
+        run: brew install openssl
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -124,6 +131,8 @@ jobs:
         target: [ x86_64, x86, aarch64, armv7, s390x, ppc64le ]
     steps:
       - uses: actions/checkout@v4
+      - name: Install OpenSSL
+        run: sudo apt-get update && sudo apt-get install -y openssl libssl-dev
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -149,6 +158,8 @@ jobs:
         target: [ x64, x86 ]
     steps:
       - uses: actions/checkout@v4
+      - name: Install OpenSSL
+        run: choco install openssl
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -160,7 +171,6 @@ jobs:
           args: --release --out dist --find-interpreter --features abi3
           sccache: 'true'
           working-directory: ${{ env.PY_PROJECT_DIR }}
-
           rust-toolchain: nightly
       - name: Upload wheels
         uses: actions/upload-artifact@v4
@@ -175,6 +185,8 @@ jobs:
         target: [ x86_64, aarch64 ]
     steps:
       - uses: actions/checkout@v4
+      - name: Install OpenSSL
+        run: brew install openssl
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -199,6 +211,8 @@ jobs:
         target: [ aarch64-apple-darwin ]
     steps:
       - uses: actions/checkout@v4
+      - name: Install OpenSSL
+        run: brew install openssl
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -220,6 +234,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install OpenSSL
+        run: sudo apt-get update && sudo apt-get install -y openssl libssl-dev
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
@@ -233,7 +249,6 @@ jobs:
           name: wheels-sdist
           path: ${{ env.WHEEL_PATH }}
 
-  # Zip wheels and upload them to release page on github
   release:
     runs-on: ubuntu-latest
     needs: [ linux, windows, macos, macos-m1, linux-abi3, windows-abi3, macos-abi3, macos-m1-abi3, sdist ]
