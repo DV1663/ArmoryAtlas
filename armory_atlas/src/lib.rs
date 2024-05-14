@@ -1,13 +1,19 @@
 use std::fs;
+use std::fs::File;
 
-use crate::cli::{GenerateArgs, GenerateSubCommands};
-use crate::items::insert_items;
+use crate::cli::{Command, CommandType, GenerateArgs, GenerateSubCommands};
+use crate::items::{insert_items, Item};
 use crate::products::insert_products;
 use anyhow::Result;
-use pyo3::FromPyObject;
+use chrono::Local;
+use env_logger::{Builder, Env};
+use pyo3::prelude::*;
+use std::io::Write;
+use clap::Parser;
+use log::{debug, info};
 
 use regex::Regex;
-use sqlx_mysql::MySqlPool;
+
 
 pub mod cli;
 pub mod config;
@@ -27,9 +33,12 @@ pub const DEFAULT_CONFIG: &str = include_str!("../../default-config.toml");
 pub const DATABASE_HANDLER: &str = include_str!("../ArmoryAtlasDBHandler.py");
 
 use sqlx::FromRow;
-use crate::db_handler::DBHandler;
+use sqlx_mysql::MySqlPool;
+use crate::config::{get_config, write_config};
+use crate::db_handler::{DBHandler, DetailedItem};
+use crate::password_handler::get_db_pass;
 
-#[derive(Debug, FromRow, Clone, FromPyObject)]
+#[derive(Debug, FromRow, FromPyObject, Clone)]
 pub struct ItemProduct {
     product_id: String,
     product_name: String,
@@ -38,42 +47,42 @@ pub struct ItemProduct {
     size: String,
 }
 
-pub async fn search_items(search_param: &str) -> Result<Vec<ItemProduct>> {
+pub async fn search_items(search_param: &str) -> Result<Vec<DetailedItem>> {
     let items = DBHandler::new()?.search_items(search_param)?;
 
     Ok(items)
 }
 
-pub async fn generate_test_data(args: GenerateArgs, db_handler: DBHandler) -> Result<()> {
+pub fn generate_test_data(args: GenerateArgs, db_handler: DBHandler) -> Result<()> {
     match args.subcommands {
-        Some(GenerateSubCommands::Products) => insert_products(&db_handler).await?,
+        Some(GenerateSubCommands::Products) => insert_products(&db_handler)?,
         
         Some(GenerateSubCommands::Items(sub_args)) => {
-            insert_items(&db_handler, sub_args.num_items).await?
+            insert_items(&db_handler, sub_args.num_items)?
         }
         
         Some(GenerateSubCommands::Users(sub_args)) => {
-            users::insert_users(&db_handler, sub_args.num_users).await?
+            users::insert_users(&db_handler, sub_args.num_users)?
         },
         
         Some(GenerateSubCommands::Loans(sub_args)) => {
             println!("Inserting {} loans", sub_args.num_loans);
-            leandings::insert_leandings(&db_handler, sub_args.num_loans).await?
+            leandings::insert_leandings(&db_handler, sub_args.num_loans)?
         }
         
         _ => {
             println!("No subcommand provided. Generating for all tables with default values...");
             
-            match insert_products(&db_handler).await {
+            match insert_products(&db_handler) {
                 Ok(_) => {}
                 Err(e) => {
                     println!("Error inserting products: {}\nProducts might already be in the database", e);
                 }
             }
             
-            insert_items(&db_handler, 10).await?;
-            users::insert_users(&db_handler, 10).await?;
-            leandings::insert_leandings(&db_handler, 10).await?;
+            insert_items(&db_handler, 10)?;
+            users::insert_users(&db_handler, 10)?;
+            leandings::insert_leandings(&db_handler, 10)?;
         }
     }
 
@@ -98,4 +107,85 @@ pub fn extract_sql(file_name: &str) -> Result<Vec<String>> {
     let res = statements.iter().map(|query| query.to_string()).collect();
 
     Ok(res)
+}
+
+pub fn setup_logger() -> Result<()> {
+    // Get the current timestamp
+    let now = Local::now();
+    // Format the timestamp as a string in the desired format
+    let timestamp = now.format("%Y-%m-%d_%H-%M-%S").to_string();
+    // Create the log filename with the timestamp
+    let log_filename = format!("logs/{}.log", timestamp);
+    // Create the log file and directory if needed
+    fs::create_dir_all("logs")?;
+
+    let file = File::create(log_filename)?;
+
+    Builder::from_env(Env::default().default_filter_or("info"))
+        .format(|buf, record| {
+            writeln!(
+                buf,
+                "[{} {} - {}:{}] {}",
+                Local::now().format("%Y-%m-%d %H:%M:%S"),
+                record.level(),
+                record
+                    .file()
+                    .unwrap_or(record.module_path().unwrap_or("unknown")),
+                record.line().unwrap_or(0),
+                record.args()
+            )
+        })
+        .target(env_logger::Target::Pipe(Box::new(file)))
+        .init();
+    Ok(())
+}
+
+#[pyfunction]
+pub fn run_cli(args: Option<Vec<String>>) -> Result<()> {
+    info!("Starting Armory Atlas...");
+    setup_logger()?;
+
+    let cmd = if let Some(args) = args {
+        Command::parse_from(args)
+    } else {
+        Command::parse()
+    };
+    
+    let config = get_config()?;
+
+    let (user, host, database) = (
+        cmd.user.unwrap_or(config.get("user")?),
+        cmd.host.unwrap_or(config.get("host")?),
+        cmd.database.unwrap_or(config.get("database")?),
+    );
+
+    let password = get_db_pass(&user, &host)?;
+
+    let db_handler = DBHandler::new()?;
+
+    match cmd.subcommands {
+        Some(CommandType::Config(args)) => {
+            write_config(&args, &password)?;
+        }
+        Some(CommandType::Generate(args)) => {
+            generate_test_data(args, db_handler)?;
+        }
+        Some(CommandType::Manage(args)) => {
+            
+        }
+        _ => {
+            //run_tui(pool).await?;
+        }
+    };
+
+    Ok(())
+}
+
+#[pymodule]
+fn armory_atlas_lib(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<Item>()?;
+    m.add_class::<DBHandler>()?;
+
+    m.add_function(wrap_pyfunction!(run_cli, m)?)?;
+    Ok(())
 }

@@ -5,7 +5,7 @@ use sqlx::FromRow;
 
 use crate::db_handler::DBHandler;
 
-pub async fn insert_leandings(db_handler: &DBHandler, num_leandings: usize) -> anyhow::Result<()> {
+pub fn insert_leandings(db_handler: &DBHandler, num_leandings: usize) -> anyhow::Result<()> {
     for _ in 0..num_leandings {
         let leanding = Loans::new_random()?;
         db_handler.insert_loan(leanding)?;

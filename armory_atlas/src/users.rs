@@ -5,7 +5,7 @@ use rand::Rng;
 use sqlx::FromRow;
 use crate::db_handler::DBHandler;
 
-pub async fn insert_users(db_handler: &DBHandler, num_users: usize) -> Result<()> {
+pub fn insert_users(db_handler: &DBHandler, num_users: usize) -> Result<()> {
     let users = generate_users(num_users);
     
     for user in users {

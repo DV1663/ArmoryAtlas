@@ -130,13 +130,13 @@ fn get_data(app: &mut App, items: &Option<Vec<ItemProduct>>) -> Result<Table<'st
 }
 
 async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<bool> {
-    let data = match app.db_handler.get_items() {
+    let data: Vec<ItemProduct> = match app.db_handler.get_items() {
         Ok(data) => data,
         Err(err) => {
             error!("{err:?}");
             return Ok(false);
         }
-    };
+    }.iter().map(|item| item.into()).collect();
 
     // Store the iterator and its values in variables
     let data_iterator: Vec<Vec<ItemProduct>> =
@@ -166,14 +166,15 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::R
                         // search for the item either via name or id
                         let query = search_box.lines()[0].trim().to_string().replace(" ", "%");
                         if query.is_empty() {
-                            data_to_display = data_iterator[app.current_page].clone();
+                            data_to_display.clone_from(&data_iterator[app.current_page]);
                             continue;
                         }
                         // search database and displat the result
                         let search_result = search_items(&query).await;
                         match search_result {
                             Ok(items) => {
-                                data_to_display = items.clone();
+                                let items: Vec<ItemProduct> = items.iter().map(|item| item.into()).collect();
+                                data_to_display.clone_from(&items);
                             }
                             Err(e) => {
                                 error!("{:?}", e)

@@ -193,7 +193,7 @@ pub fn generate_items(num_items: usize) -> Result<Vec<Item>> {
     Ok(items)
 }
 
-pub async fn insert_items(db_handler: &DBHandler, num_items: usize) -> Result<()> {
+pub fn insert_items(db_handler: &DBHandler, num_items: usize) -> Result<()> {
     let items = generate_items(num_items)?;
     
     println!("Inserting these items:");

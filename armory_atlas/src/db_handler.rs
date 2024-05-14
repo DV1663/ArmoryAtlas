@@ -3,28 +3,83 @@ use crate::users::Users;
 use crate::{ItemProduct, DATABASE_HANDLER};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyTuple};
+use rayon::prelude::*;
 use crate::leandings::Loans;
 use crate::products::Product;
 
 #[derive(Clone)]
+#[pyclass]
 pub struct DBHandler {
     pool: PyObject,
 }
 
+#[pyclass]
+pub struct DetailedItem {
+    pub product_id: String,
+    pub product_name: String,
+    pub product_type: String,
+    pub quantity: i64,
+    pub size: String,
+}
+
+impl From<ItemProduct> for DetailedItem {
+    fn from(item_product: ItemProduct) -> Self {
+        Self {
+            product_id: item_product.product_id.clone(),
+            product_name: item_product.product_name.clone(),
+            product_type: item_product.product_type.clone(),
+            quantity: item_product.quantity.clone(),
+            size: item_product.size.clone(),
+        }
+    }
+}
+
+impl From<DetailedItem> for ItemProduct {
+    fn from(detailed_item: DetailedItem) -> Self {
+        Self {
+            product_id: detailed_item.product_id.clone(),
+            product_name: detailed_item.product_name.clone(),
+            product_type: detailed_item.product_type.clone(),
+            quantity: detailed_item.quantity,
+            size: detailed_item.size.clone(),
+        }
+    }
+}
+
+impl From<&DetailedItem> for ItemProduct {
+    fn from(detailed_item: &DetailedItem) -> Self {
+        Self {
+            product_id: detailed_item.product_id.clone(),
+            product_name: detailed_item.product_name.clone(),
+            product_type: detailed_item.product_type.clone(),
+            quantity: detailed_item.quantity,
+            size: detailed_item.size.clone(),
+        }
+    }
+}
+
+#[pymethods]
 impl DBHandler {
+    #[new]
     pub fn new() -> anyhow::Result<Self> {
         let pool = DBHandler::get_db_handler_obj()?;
         Ok(Self { pool })
     }
 
-    pub fn get_items(&self) -> anyhow::Result<Vec<ItemProduct>> {
+    pub fn get_items(&self) -> anyhow::Result<Vec<DetailedItem>> {
         Python::with_gil(|py| {
             let items = self.pool.call_method0(py, "get_items")?;
             let items: Vec<ItemProduct> = items.extract(py)?;
+            let items: Vec<DetailedItem> = items
+                .into_par_iter()
+                .map(|item| DetailedItem::from(item))
+                .collect();
             Ok(items)
+            
         })
     }
 
+    #[staticmethod]
     pub fn get_db_handler_obj() -> anyhow::Result<PyObject> {
         Python::with_gil(|py| {
             let module = PyModule::from_code_bound(
@@ -83,10 +138,14 @@ impl DBHandler {
         })
     }
     
-    pub fn search_items(&self, query: &str) -> anyhow::Result<Vec<ItemProduct>> {
+    pub fn search_items(&self, query: &str) -> anyhow::Result<Vec<DetailedItem>> {
         Python::with_gil(|py| {
             let items = self.pool.call_method1(py, "search_items", (query,))?;
             let items: Vec<ItemProduct> = items.extract(py)?;
+            let items: Vec<DetailedItem> = items
+                .into_par_iter()
+                .map(|item| DetailedItem::from(item))
+                .collect();
             Ok(items)
         })
     }

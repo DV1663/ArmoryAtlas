@@ -1,0 +1,266 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - '*'
+  pull_request:
+  workflow_dispatch:
+
+env:
+  PY_PROJECT_DIR: armory_atlas
+  WHEEL_PATH: ${{ env.PY_PROJECT_DIR }}/dist
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86_64, x86, aarch64, armv7, s390x, ppc64le]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist --find-interpreter
+          sccache: 'true'
+          manylinux: auto
+          working-directory: ${{ env.PY_PROJECT_DIR }}
+          rust-toolchain: nightly
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-${{ matrix.target }}
+          path: ${{ env.WHEEL_PATH }}
+
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        target: [x64, x86]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          architecture: ${{ matrix.target }}
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist --find-interpreter
+          sccache: 'true'
+          working-directory: ${{ env.PY_PROJECT_DIR }}
+          rust-toolchain: nightly
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-windows-${{ matrix.target }}
+          path: ${{ env.WHEEL_PATH }}
+
+  macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target: [x86_64, aarch64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist --find-interpreter
+          sccache: 'true'
+          working-directory: ${{ env.PY_PROJECT_DIR }}
+          rust-toolchain: nightly
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-macos-${{ matrix.target }}
+          path: ${{ env.WHEEL_PATH }}
+
+# m1 mac
+  macos-m1:
+    runs-on: macos-14
+    strategy:
+      matrix:
+        target: [aarch64-apple-darwin]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist --find-interpreter
+          sccache: 'true'
+          working-directory: ${{ env.PY_PROJECT_DIR }}
+          rust-toolchain: nightly
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-macos-${{ matrix.target }}
+          path: ${{ env.WHEEL_PATH }}
+
+  linux-abi3:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [ x86_64, x86, aarch64, armv7, s390x, ppc64le ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist --find-interpreter --features abi3
+          sccache: 'true'
+          manylinux: auto
+          working-directory: ${{ env.PY_PROJECT_DIR }}
+          rust-toolchain: nightly
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-${{ matrix.target }}-abi3
+          path: ${{ env.WHEEL_PATH }}
+
+  windows-abi3:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        target: [ x64, x86 ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          architecture: ${{ matrix.target }}
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist --find-interpreter --features abi3
+          sccache: 'true'
+          working-directory: ${{ env.PY_PROJECT_DIR }}
+
+          rust-toolchain: nightly
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-windows-${{ matrix.target }}-abi3
+          path: ${{ env.WHEEL_PATH }}
+
+  macos-abi3:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target: [ x86_64, aarch64 ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist --find-interpreter --features abi3
+          sccache: 'true'
+          working-directory: ${{ env.PY_PROJECT_DIR }}
+          rust-toolchain: nightly
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-macos-${{ matrix.target }}-abi3
+          path: ${{ env.WHEEL_PATH }}
+
+  macos-m1-abi3:
+    runs-on: macos-14
+    strategy:
+      matrix:
+        target: [ aarch64-apple-darwin ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Build wheels
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist --find-interpreter --features abi3
+          sccache: 'true'
+          working-directory: ${{ env.PY_PROJECT_DIR }}
+          rust-toolchain: nightly
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-macos-${{ matrix.target }}-abi3
+          path: ${{ env.WHEEL_PATH }}
+
+  sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+          working-directory: ${{ env.PY_PROJECT_DIR }}
+          rust-toolchain: nightly
+      - name: Upload sdist
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-sdist
+          path: ${{ env.WHEEL_PATH }}
+
+  # Zip wheels and upload them to release page on github
+  release:
+    runs-on: ubuntu-latest
+    needs: [ linux, windows, macos, macos-m1, linux-abi3, windows-abi3, macos-abi3, macos-m1-abi3, sdist ]
+    steps:
+      - name: Download wheels artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ env.PY_PROJECT_DIR }}/dist
+      - name: Zip wheels
+        run: |
+          zip -r ${{ env.PY_PROJECT_DIR }}/dist/wheels.zip ${{ env.PY_PROJECT_DIR }}/dist
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.PY_PROJECT_DIR }}/dist/wheels.zip
+          asset_name: wheels.zip
+          asset_content_type: application/zip

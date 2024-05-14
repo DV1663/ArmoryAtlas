@@ -6,7 +6,7 @@ use pyo3::{pyclass, pymethods};
 use crate::{CONFIG_DIR, DEFAULT_PRODUCTS, PRODUCTS_FILE};
 use crate::db_handler::DBHandler;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[pyclass]
 pub struct Product {
     #[serde(rename = "ProductID")]
@@ -72,7 +72,7 @@ pub fn get_products() -> Result<Vec<Product>> {
     Ok(products)
 }
 
-pub async fn insert_products(db_handler: &DBHandler) -> Result<()> {
+pub fn insert_products(db_handler: &DBHandler) -> Result<()> {
     let products: Vec<Product> = get_products()?;
     
     for product in products {

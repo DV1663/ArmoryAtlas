@@ -40,3 +40,6 @@ chrono = { workspace = true }
 pyo3 = { workspace = true }
 
 prettytable-rs = "0.10.0"
+
+[features]
+py-bindings = ["pyo3/extension-module", "pyo3/multiple-pymethods"]
