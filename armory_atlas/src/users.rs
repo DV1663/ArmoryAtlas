@@ -2,6 +2,7 @@ use anyhow::Result;
 use chrono::{Datelike, NaiveDate};
 use pyo3::FromPyObject;
 use rand::Rng;
+use sqlx::FromRow;
 use crate::db_handler::DBHandler;
 
 pub fn insert_users(db_handler: &DBHandler, num_users: usize) -> Result<()> {
@@ -101,7 +102,8 @@ impl Users {
     }
 }
 
-#[derive(Debug, Clone, FromRow, FromPyObject)]
+#[derive(Debug, Clone, FromPyObject)]
+#[cfg_attr(feature = "rs-db", derive(sqlx::FromRow))]
 pub struct SSN {
     value: String,
 }
