@@ -12,7 +12,7 @@ on:
 
 env:
   PY_PROJECT_DIR: armory_atlas
-  WHEEL_PATH: ${{ env.PY_PROJECT_DIR }}/dist
+  WHEEL_PATH: armory_atlas/dist
 
 permissions:
   contents: read
