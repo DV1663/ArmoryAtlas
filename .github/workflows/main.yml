@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install OpenSSL
-        run: sudo apt-get update && sudo apt-get install -y openssl libssl-dev
+        run: sudo apt-get update && sudo apt-get install -y openssl libssl-dev pkg-config
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -124,112 +124,6 @@ jobs:
           name: wheels-macos-${{ matrix.target }}
           path: ${{ env.WHEEL_PATH }}
 
-  linux-abi3:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        target: [ x86_64, x86, aarch64, armv7, s390x, ppc64le ]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install OpenSSL
-        run: sudo apt-get update && sudo apt-get install -y openssl libssl-dev
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      - name: Build wheels
-        uses: PyO3/maturin-action@v1
-        with:
-          target: ${{ matrix.target }}
-          args: --release --out dist --find-interpreter --features abi3
-          sccache: 'true'
-          manylinux: auto
-          working-directory: ${{ env.PY_PROJECT_DIR }}
-          rust-toolchain: nightly
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-linux-${{ matrix.target }}-abi3
-          path: ${{ env.WHEEL_PATH }}
-
-  windows-abi3:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        target: [ x64, x86 ]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install OpenSSL
-        run: choco install openssl
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-          architecture: ${{ matrix.target }}
-      - name: Build wheels
-        uses: PyO3/maturin-action@v1
-        with:
-          target: ${{ matrix.target }}
-          args: --release --out dist --find-interpreter --features abi3
-          sccache: 'true'
-          working-directory: ${{ env.PY_PROJECT_DIR }}
-          rust-toolchain: nightly
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-windows-${{ matrix.target }}-abi3
-          path: ${{ env.WHEEL_PATH }}
-
-  macos-abi3:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        target: [ x86_64, aarch64 ]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install OpenSSL
-        run: brew install openssl
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      - name: Build wheels
-        uses: PyO3/maturin-action@v1
-        with:
-          target: ${{ matrix.target }}
-          args: --release --out dist --find-interpreter --features abi3
-          sccache: 'true'
-          working-directory: ${{ env.PY_PROJECT_DIR }}
-          rust-toolchain: nightly
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-macos-${{ matrix.target }}-abi3
-          path: ${{ env.WHEEL_PATH }}
-
-  macos-m1-abi3:
-    runs-on: macos-14
-    strategy:
-      matrix:
-        target: [ aarch64-apple-darwin ]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install OpenSSL
-        run: brew install openssl
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      - name: Build wheels
-        uses: PyO3/maturin-action@v1
-        with:
-          target: ${{ matrix.target }}
-          args: --release --out dist --find-interpreter --features abi3
-          sccache: 'true'
-          working-directory: ${{ env.PY_PROJECT_DIR }}
-          rust-toolchain: nightly
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-macos-${{ matrix.target }}-abi3
-          path: ${{ env.WHEEL_PATH }}
-
   sdist:
     runs-on: ubuntu-latest
     steps:
@@ -251,7 +145,7 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
-    needs: [ linux, windows, macos, macos-m1, linux-abi3, windows-abi3, macos-abi3, macos-m1-abi3, sdist ]
+    needs: [ linux, windows, macos, macos-m1, sdist ]
     steps:
       - name: Download wheels artifacts
         uses: actions/download-artifact@v4
