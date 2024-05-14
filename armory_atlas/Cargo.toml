@@ -15,8 +15,8 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 toml = { workspace = true }
 
-sqlx = { workspace = true }
-sqlx-mysql = { workspace = true }
+sqlx = { workspace = true, optional = true }
+sqlx-mysql = { workspace = true, optional = true }
 tokio = { workspace = true }
 
 rayon = { workspace = true }
@@ -42,4 +42,7 @@ pyo3 = { workspace = true }
 prettytable-rs = "0.10.0"
 
 [features]
+default = []
 py-bindings = ["pyo3/extension-module", "pyo3/multiple-pymethods"]
+rs-db = ["sqlx", "sqlx-mysql"]
+tui = ["rs-db"]

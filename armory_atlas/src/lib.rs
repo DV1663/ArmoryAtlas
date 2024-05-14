@@ -22,6 +22,7 @@ pub mod items;
 pub mod leandings;
 pub mod password_handler;
 pub mod products;
+#[cfg(feature = "tui")]
 pub mod tui;
 pub mod users;
 
