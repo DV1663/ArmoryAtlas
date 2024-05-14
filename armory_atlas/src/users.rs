@@ -2,7 +2,6 @@ use anyhow::Result;
 use chrono::{Datelike, NaiveDate};
 use pyo3::FromPyObject;
 use rand::Rng;
-use sqlx::FromRow;
 use crate::db_handler::DBHandler;
 
 pub fn insert_users(db_handler: &DBHandler, num_users: usize) -> Result<()> {
@@ -25,7 +24,8 @@ fn generate_users(num_users: usize) -> Vec<Users> {
     users
 }
 
-#[derive(Debug, FromRow, FromPyObject)]
+#[derive(Debug, FromPyObject)]
+#[cfg_attr(feature = "rs-db", derive(sqlx::FromRow))]
 #[pyo3::pyclass]
 pub struct Users {
     pub ssn: String,

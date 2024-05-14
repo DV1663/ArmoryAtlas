@@ -1,7 +1,6 @@
 use chrono::{NaiveDate, Datelike};
 use pyo3::{FromPyObject, pymethods};
 use rand::Rng;
-use sqlx::FromRow;
 
 use crate::db_handler::DBHandler;
 
@@ -14,7 +13,8 @@ pub fn insert_leandings(db_handler: &DBHandler, num_leandings: usize) -> anyhow:
     Ok(())
 }
 
-#[derive(Debug, FromRow, FromPyObject)]
+#[derive(Debug, FromPyObject)]
+#[cfg_attr(feature = "rs-db", derive(sqlx::FromRow))]
 #[pyo3::pyclass]
 pub struct Loans {
     pub leanding_id: String,

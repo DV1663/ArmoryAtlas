@@ -33,13 +33,12 @@ pub const DEFAULT_PRODUCTS: &str = include_str!("../../default-products.json");
 pub const DEFAULT_CONFIG: &str = include_str!("../../default-config.toml");
 pub const DATABASE_HANDLER: &str = include_str!("../ArmoryAtlasDBHandler.py");
 
-use sqlx::FromRow;
-use sqlx_mysql::MySqlPool;
 use crate::config::{get_config, write_config};
 use crate::db_handler::{DBHandler, DetailedItem};
 use crate::password_handler::get_db_pass;
 
-#[derive(Debug, FromRow, FromPyObject, Clone)]
+#[derive(Debug, FromPyObject, Clone)]
+#[cfg_attr(feature = "rs-db", derive(sqlx::FromRow))]
 pub struct ItemProduct {
     product_id: String,
     product_name: String,

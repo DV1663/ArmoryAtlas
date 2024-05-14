@@ -19,14 +19,14 @@ use prettytable::{format, row, Row, Table};
 use pyo3::{FromPyObject, pymethods};
 use rand::Rng;
 use rayon::prelude::*;
-use sqlx::FromRow;
 use crate::db_handler::DBHandler;
 
 use crate::products;
 
 pub const SIZES: [&str; 6] = ["XS", "S", "M", "L", "XL", "XXL"];
 
-#[derive(Debug, FromRow, FromPyObject)]
+#[derive(Debug, FromPyObject)]
+#[cfg_attr(feature = "rs-db", derive(sqlx::FromRow))]
 #[pyo3::pyclass]
 pub struct Item {
     pub item_id: String,
