@@ -7,6 +7,8 @@ use ArmoryAtlas;
 # =============================
 # ======== Table Users ========
 # =============================
+DROP TABLE IF EXISTS USERS;
+
 CREATE TABLE IF NOT EXISTS Users (
     -- Primary key
     SSN VARCHAR(11) NOT NULL,
@@ -21,6 +23,8 @@ CREATE TABLE IF NOT EXISTS Users (
 # ================================
 # ======== Table Products ========
 # ================================
+DROP TABLE IF EXISTS Products;
+
 CREATE TABLE IF NOT EXISTS Products (
     -- Primary key
 	ProductID VARCHAR(16) NOT NULL,
@@ -36,6 +40,8 @@ CREATE TABLE IF NOT EXISTS Products (
 # =============================
 # ======== Table Items ========
 # =============================
+DROP TABLE IF EXISTS Items;
+
 CREATE TABLE IF NOT EXISTS Items (
     -- Primary key
 	ItemID BINARY(16) NOT NULL,
@@ -57,6 +63,8 @@ CREATE TABLE IF NOT EXISTS Items (
 # ===============================
 # ======== Table Lending ========
 # ===============================
+DROP TABLE IF EXISTS Lendings;
+
 CREATE TABLE IF NOT EXISTS Lendings (
     -- Primary key
 	LendingID BINARY(16) NOT NULL,
@@ -156,6 +164,8 @@ DELIMITER ;
 # ============ Function 1 ============
 #       IN STOCK FOR PRODUCT
 # ====================================
+DROP FUNCTION IF EXISTS in_stock_for_product;
+
 DELIMITER //
 CREATE FUNCTION in_stock_for_product (product CHAR(16), size CHAR(5))
 RETURNS INT
@@ -197,8 +207,10 @@ DELIMITER ;
 # UPDATE RETURN DATE TO TODAYS DATE AND CONFIRM
 # =============================================
 
+DROP PROCEDURE IF EXISTS return_item;
+
 DELIMITER //
-CREATE PROCEDURE return_item (IN LendID INT)
+CREATE PROCEDURE return_item (IN LendID BINARY(16))
 BEGIN
     UPDATE
         Lendings
@@ -226,6 +238,8 @@ DELIMITER ;
 #       NUMBER OF BORROWERS
 # ====================================
 
+DROP VIEW IF EXISTS number_of_borrowes;
+
 CREATE VIEW number_of_borrowes AS
 SELECT
     u.SSN,
@@ -251,6 +265,8 @@ ORDER BY
 # ============ View 2 =================
 # SHOW ALL ITEMS BORROWED BY A SPECIFIC USER
 # ==========================================
+DROP VIEW IF EXISTS show_borrowed_view;
+
 CREATE VIEW show_borrowed_view AS
     SELECT
         l.LendingID,

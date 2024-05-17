@@ -74,7 +74,7 @@ pub fn get_products() -> Result<Vec<Product>> {
 
 pub fn insert_products(db_handler: &DBHandler) -> Result<()> {
     let products: Vec<Product> = get_products()?;
-    
+    //dbg!(&products);
     for product in products {
         db_handler.insert_product(product)?
     }

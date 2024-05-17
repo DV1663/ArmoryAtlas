@@ -1,9 +1,16 @@
+pub mod in_stock_size;
+pub mod loans;
+
+use std::ops::{Index, Range, RangeTo};
+use prettytable::{Row, row, Table};
 use crate::items::Item;
 use crate::users::Users;
 use crate::{ItemProduct, DATABASE_HANDLER};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyTuple};
 use rayon::prelude::*;
+use crate::db_handler::in_stock_size::{InStockSize, InStockSizes};
+use crate::db_handler::loans::{DetailedLoan, DetailedLoans, PyDetailedLoan};
 use crate::leandings::Loans;
 use crate::products::Product;
 
@@ -13,6 +20,7 @@ pub struct DBHandler {
     pool: PyObject,
 }
 
+#[derive(Clone)]
 #[pyclass]
 pub struct DetailedItem {
     pub product_id: String,
@@ -58,6 +66,51 @@ impl From<&DetailedItem> for ItemProduct {
     }
 }
 
+impl From<DetailedItem> for Row {
+    fn from(value: DetailedItem) -> Self {
+        row![value.product_id, value.product_name, value.product_type, value.quantity, value.size]
+    }
+}
+
+impl From<&DetailedItem> for Row {
+    fn from(value: &DetailedItem) -> Self {
+        row![value.product_id, value.product_name, value.product_type, value.quantity, value.size]
+    }
+}
+
+pub struct DetailedItems(Vec<DetailedItem>);
+
+impl Index<usize> for DetailedItems {
+    type Output = DetailedItem;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
+    }
+}
+
+impl From<Vec<DetailedItem>> for DetailedItems {
+    fn from(items: Vec<DetailedItem>) -> Self {
+        Self(items)
+    }
+}
+
+impl From<DetailedItems> for Vec<DetailedItem> {
+    fn from(detailed_items: DetailedItems) -> Self {
+        detailed_items.0
+    }
+}
+
+impl From<DetailedItems> for Table {
+    fn from(items: DetailedItems) -> Self {
+        let mut table = Table::new();
+        table.add_row(row!["Product ID", "Product Name", "Product Type", "Quantity", "Size"]);
+        for item in items.0 {
+            table.add_row((&item).into());
+        }
+        table
+    }
+}
+
 #[pymethods]
 impl DBHandler {
     #[new]
@@ -72,10 +125,31 @@ impl DBHandler {
             let items: Vec<ItemProduct> = items.extract(py)?;
             let items: Vec<DetailedItem> = items
                 .into_par_iter()
-                .map(|item| DetailedItem::from(item))
+                .map(DetailedItem::from)
                 .collect();
             Ok(items)
             
+        })
+    }
+
+    pub fn get_in_stock_size(&self, product_id: String, size: String) -> anyhow::Result<InStockSizes> {
+        Python::with_gil(|py| {
+            let items = self.pool.call_method1(py, "get_in_stock_size", (product_id, size))?;
+            let items: Vec<InStockSize> = items.extract(py)?;
+            
+            Ok(items.into())
+        })
+    }
+    
+    pub fn get_loans(&self) -> anyhow::Result<Vec<DetailedLoan>> {
+        Python::with_gil(|py| {
+            let loans = self.pool.call_method0(py, "get_loans")?;
+            let loans: Vec<PyDetailedLoan> = loans.extract(py)?;
+            let loans: Vec<DetailedLoan> = loans
+                .into_par_iter()
+                .map(DetailedLoan::from)
+                .collect();
+            Ok(loans)
         })
     }
 
@@ -144,9 +218,23 @@ impl DBHandler {
             let items: Vec<ItemProduct> = items.extract(py)?;
             let items: Vec<DetailedItem> = items
                 .into_par_iter()
-                .map(|item| DetailedItem::from(item))
+                .map(DetailedItem::from)
                 .collect();
             Ok(items)
+        })
+    }
+
+    pub fn drop_all(&self) -> anyhow::Result<()> {
+        Python::with_gil(|py| {
+            self.pool.call_method0(py, "drop_all")?;
+            Ok(())
+        })
+    }
+
+    pub fn create_all(&self) -> anyhow::Result<()> {
+        Python::with_gil(|py| {
+            self.pool.call_method0(py, "create_all")?;
+            Ok(())
         })
     }
 }

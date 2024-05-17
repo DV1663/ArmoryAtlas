@@ -1,7 +1,7 @@
 use std::fs;
 use std::fs::File;
 
-use crate::cli::{Command, CommandType, GenerateArgs, GenerateSubCommands};
+use crate::cli::{Command, CommandType, GenerateArgs, GenerateSubCommands, GetSubCommands};
 use crate::items::{insert_items, Item};
 use crate::products::insert_products;
 use anyhow::Result;
@@ -11,6 +11,7 @@ use pyo3::prelude::*;
 use std::io::Write;
 use clap::Parser;
 use log::{debug, info};
+use prettytable::Table;
 
 use regex::Regex;
 
@@ -34,7 +35,8 @@ pub const DEFAULT_CONFIG: &str = include_str!("../../default-config.toml");
 pub const DATABASE_HANDLER: &str = include_str!("../ArmoryAtlasDBHandler.py");
 
 use crate::config::{get_config, write_config};
-use crate::db_handler::{DBHandler, DetailedItem};
+use crate::db_handler::{DBHandler, DetailedItem, DetailedItems};
+use crate::db_handler::loans::DetailedLoans;
 use crate::password_handler::get_db_pass;
 
 #[derive(Debug, FromPyObject, Clone)]
@@ -77,19 +79,20 @@ pub fn generate_test_data(args: GenerateArgs, db_handler: DBHandler) -> Result<(
                 Ok(_) => {}
                 Err(e) => {
                     println!("Error inserting products: {}\nProducts might already be in the database", e);
+                    
                 }
             }
             
-            insert_items(&db_handler, 10)?;
-            users::insert_users(&db_handler, 10)?;
-            leandings::insert_leandings(&db_handler, 10)?;
+            insert_items(&db_handler, args.num_to_generate.unwrap())?;
+            users::insert_users(&db_handler, args.num_to_generate.unwrap())?;
+            leandings::insert_leandings(&db_handler, args.num_to_generate.unwrap())?;
         }
     }
 
     Ok(())
 }
 
-pub fn extract_sql(file_name: &str) -> Result<Vec<String>> {
+pub fn extract_sql_from_file(file_name: &str) -> Result<Vec<String>> {
     // Load the file content
     let content = fs::read_to_string(file_name).expect("Something went wrong reading the file");
 
@@ -97,6 +100,22 @@ pub fn extract_sql(file_name: &str) -> Result<Vec<String>> {
     let comment_re = Regex::new(r"(--.*$)|(/\*[\s\S]*?\*/)|(#.*$)")?;
     // Remove comments
     let no_comments = comment_re.replace_all(&content, "");
+
+    // Split by ';' to separate SQL statements
+    let statements: Vec<&str> = no_comments
+        .split(';')
+        .filter(|s| !s.trim().is_empty()) // Remove empty statements
+        .collect();
+
+    let res = statements.iter().map(|query| query.to_string()).collect();
+
+    Ok(res)
+}
+
+pub fn extract_sql_from_string(content: &str) -> Result<Vec<String>> {
+    let comment_re = Regex::new(r"(--.*$)|(/\*[\s\S]*?\*/)|(#.*$)")?;
+    // Remove comments
+    let no_comments = comment_re.replace_all(content, "");
 
     // Split by ';' to separate SQL statements
     let statements: Vec<&str> = no_comments
@@ -171,7 +190,28 @@ pub fn run_cli(args: Option<Vec<String>>) -> Result<()> {
             generate_test_data(args, db_handler)?;
         }
         Some(CommandType::Manage(args)) => {
-            
+            if args.drop_all {
+                db_handler.drop_all()?;
+            }
+            if args.create_all {
+                db_handler.create_all()?;
+            }
+        },
+        Some(CommandType::Get(args)) => {
+            match args.subcommands {
+                GetSubCommands::Items(args) => {
+                    let items: DetailedItems = db_handler.get_items()?[..args.limit.unwrap()].to_vec().into();
+                    println!("{}", Table::from(items))
+                }
+                GetSubCommands::InStock(args) => {
+                    let items = db_handler.get_in_stock_size(args.pruduct_id, args.size)?;
+                    println!("{}", Table::from(items));
+                }
+                GetSubCommands::Loans(args) => {
+                    let loans: DetailedLoans = db_handler.get_loans()?[..args.limit.unwrap()].to_vec().into();
+                    println!("{}", Table::from(loans));
+                }
+            }
         }
         _ => {
             //run_tui(pool).await?;

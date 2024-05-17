@@ -18,8 +18,9 @@ class ItemProduct:
 
 
 class InStockSize:
-    def __init__(self, product_id, size, tot_in):
+    def __init__(self, product_id, product_name, size, tot_in):
         self.product_id = product_id
+        self.product_name = product_name
         self.size = size
         self.tot_in = tot_in
 
@@ -68,18 +69,31 @@ def create_item_dict(item):
 
 
 class AllBorrowed:
-    def __init__(self, lending_id, SSN, name, item_id, product_name, size, borrow_date, return_date):
+    def __init__(self, lending_id, ssn, name, item_id, product_name, size, borrow_date, return_date):
+        if return_date is not None:
+            self.return_date = return_date.__str__()
+        else:
+            self.return_date = None
+
         self.lending_id = uuid.UUID(bytes=lending_id).__str__()
-        self.SSN = SSN
+        self.ssn = ssn
         self.name = name
         self.item_id = uuid.UUID(bytes=item_id).__str__()
         self.product_name = product_name
         self.size = size
-        self.borrow_date = borrow_date
-        self.return_date = return_date
+        self.borrow_date = borrow_date.__str__()
 
     def __repr__(self):
-        return f"AllBorrowed({self.lending_id}, {self.SSN}, {self.name}, {self.item_id}, {self.product_name}, {self.size}, {self.borrow_date}, {self.return_date})"
+        return (
+            f"AllBorrowed(lending_id: {type(self.lending_id).__name__} = {self.lending_id}, "
+            f"ssn: {type(self.ssn).__name__} = {self.ssn}, "
+            f"name: {type(self.name).__name__} = {self.name}, "
+            f"item_id: {type(self.item_id).__name__} = {self.item_id}, "
+            f"product_name: {type(self.product_name).__name__} = {self.product_name}, "
+            f"size: {type(self.size).__name__} = {self.size}, "
+            f"borrow_date: {type(self.borrow_date).__name__} = {self.borrow_date}, "
+            f"return_date: {type(self.return_date).__name__} = {self.return_date})"
+        )
 
 
 class DBHandler:
@@ -138,13 +152,45 @@ class DBHandler:
             ) limit 1;
         """
 
-        # Execute the stored procedure
-        self.cursor.execute(query)
-
-        item = self.cursor.fetchone()
-        item = Item(*item)
-
+        try:
+            self.cursor.execute(query)
+            items = self.cursor.fetchone()
+        except mysql.connector.Error as err:
+            raise err
+        try:
+            item = Item(*items)
+        except Exception:
+            raise Exception("No item available to borrow!")
         return item
+
+    def get_users(self) -> list[User]:
+        query = """
+            SELECT * FROM Users;
+                    """
+
+        self.cursor.execute(query)
+        users = self.cursor.fetchall()
+        users_list = [User(*users) for users in users]
+        return users_list
+
+    def get_loans(self) -> list[AllBorrowed]:
+        query = """
+            SELECT l.LendingID, l.SSN, u.Name, l.ItemID, p.NameOfProduct, i.Size, l.BorrowingDate, l.ReturnDate
+            FROM Lendings l
+            JOIN Users u ON l.SSN = u.SSN
+            JOIN Items i ON l.ItemID = i.ItemID
+            JOIN Products p ON i.ProductID = p.ProductID
+            ORDER BY 
+                CASE WHEN l.ReturnDate IS NULL THEN 0 ELSE 1 END,
+                l.BorrowingDate DESC,
+                l.ReturnDate DESC;
+                    """
+
+        self.cursor.execute(query)
+        loans = self.cursor.fetchall()
+        loans_list = [AllBorrowed(*loan) for loan in loans]
+        print(loans_list[0])
+        return loans_list
 
     def get_items(self) -> list[ItemProduct]:
         query = """
@@ -167,17 +213,21 @@ class DBHandler:
         item_list = [ItemProduct(*item) for item in items]
         return item_list
 
-    def get_in_stock_size(self, product_id: str, size: str) -> list[InStockSize] | mysql.connector.Error:
+    def get_in_stock_size(self, product_id: str, size: str) -> list[InStockSize]:
         query = f"""
-        SELECT 
+            SELECT 
                 p.ProductID as product_id,
                 p.NameOfProduct AS product_name,
+                i.Size AS size,
                 in_stock_for_product('{product_id}', '{size}') AS totIn
             FROM 
                 Products p
+            JOIN 
+                Items i ON p.ProductID = i.ProductID
             WHERE
-                p.ProductID = '{product_id}';
-                """
+                p.ProductID = '{product_id}' AND i.Size = '{size}'
+            LIMIT 1;
+            """
         try:
             # Execute query with multi=True
             results = self.cursor.execute(query, multi=True)
@@ -192,8 +242,7 @@ class DBHandler:
             return size_stock_list
 
         except mysql.connector.Error as err:
-            print("Error: ", err)
-            return err
+            raise err
 
     def return_item(self, lending_id: str):
         query = f"""
@@ -223,7 +272,6 @@ class DBHandler:
         borrowes_list = [TotBorrowes(*borrowes) for borrowes in borrowes]
         return borrowes_list
 
-
     @staticmethod
     def get_config() -> dict:
         if os.name == 'nt':
@@ -237,36 +285,55 @@ class DBHandler:
         return config
 
     def insert_loan(self, loan) -> None:
-        query = """
-            INSERT INTO Lendings (LendingID, SSN, ItemID, BorrowingDate, ReturnDate) 
-            VALUES (UUID_TO_BIN(UUID()), %s, UUID_TO_BIN(%s), %s, %s);
-        """
-
         borrowing_date = loan.borrowing_date.strftime('%Y-%m-%d') if loan.borrowing_date else None
         return_date = loan.return_date.strftime('%Y-%m-%d') if loan.return_date else None
+        query = f"""
+            INSERT INTO Lendings (LendingID, SSN, ItemID, BorrowingDate, ReturnDate) 
+            VALUES (UUID_TO_BIN(UUID()), '{loan.user_id}', UUID_TO_BIN('{loan.item_id}'), '{borrowing_date}', %s);
+        """
 
-        self.cursor.execute(query, (loan.user_id, loan.item_id, borrowing_date, return_date))
+        try:
+            self.cursor.execute(query, (return_date,))
+            self.db.commit()  # Commit the transaction
+        except mysql.connector.Error as err:
+            self.db.rollback()  # Rollback the transaction in case of error
+            raise err
 
     def insert_product(self, product) -> None:
-        query = """
-            INSERT INTO Products (ProductID, NameOfProduct, Type) VALUES (%s, %s, %s)
+        query = f"""
+            INSERT INTO Products (ProductID, NameOfProduct, Type) VALUES ('{product.product_id}', '{product.product_name}', '{product.product_type}')
             """
 
-        self.cursor.execute(query, (product.product_id, product.product_name, product.product_type))
+        try:
+            self.cursor.execute(query)
+            self.db.commit()  # Commit the transaction
+        except mysql.connector.Error as err:
+            self.db.rollback()  # Rollback the transaction in case of error
+            raise err
 
     def insert_item(self, item) -> None:
         query = f"""
-            INSERT INTO Items (ItemID, ProductID, Size, Quality) VALUES (UUID_TO_BIN(UUID()), "{item.product_id}", "{item.size}", {item.quality})
+            INSERT INTO Items (ItemID, ProductID, Size, Quality) VALUES (UUID_TO_BIN(UUID()), \"{item.product_id}\", \"{item.size}\", {item.quality})
         """
 
-        self.cursor.execute(query)
+        try:
+            self.cursor.execute(query)
+            self.db.commit()  # Commit the transaction
+        except mysql.connector.Error as err:
+            self.db.rollback()  # Rollback the transaction in case of error
+            raise err
 
     def insert_user(self, user) -> None:
-        query = """
-            INSERT INTO Users (SSN, Name) VALUES (%s, %s)
+        query = f"""
+            INSERT INTO Users (SSN, Name) VALUES (\"{user.ssn}\", \"{user.name}\")
         """
 
-        self.cursor.execute(query, (user.ssn, user.name))
+        try:
+            self.cursor.execute(query)
+            self.db.commit()  # Commit the transaction
+        except mysql.connector.Error as err:
+            self.db.rollback()  # Rollback the transaction in case of error
+            raise err
 
     def search_items(self, search_param: str) -> list[ItemProduct]:
         query = f"""
@@ -299,7 +366,7 @@ class DBHandler:
 
     def test(self):
         query = """
-            SELECT BIN_TO_UUID(LendingID), SSN, BIN_TO_UUID(ItemID), BorrowingDate, ReturnDate FROM Lendings;
+            SELECT * from Users;
                     """
 
         self.cursor.execute(query)
@@ -307,8 +374,288 @@ class DBHandler:
 
         return borrowes
 
+    def _drop_tables(self):
+        queries = [
+            """
+                DROP TABLE IF EXISTS Lendings;
+            """,
+            """
+                DROP TABLE IF EXISTS Items;
+            """,
+            """
+                DROP TABLE IF EXISTS Products;
+            """,
+            """
+                DROP TABLE IF EXISTS Users;
+            """,
+        ]
+
+        for query in queries:
+            self.cursor.execute(query)
+
+    def _drop_triggers(self):
+        queries = [
+            """
+                DROP TRIGGER IF EXISTS check_borrowed;
+            """,
+            """
+                DROP TRIGGER IF EXISTS update_level_of_use;
+            """
+        ]
+
+        for query in queries:
+            self.cursor.execute(query)
+
+    def _drop_procedures(self):
+        queries = [
+            """
+                DROP PROCEDURE IF EXISTS return_item;
+            """,
+            """
+                DROP PROCEDURE IF EXISTS show_borrowed;
+            """
+        ]
+
+        for query in queries:
+            self.cursor.execute(query)
+
+    def _drop_views(self):
+        queries = [
+            """
+                DROP VIEW IF EXISTS show_borrowed_view;
+            """,
+            """
+                DROP VIEW IF EXISTS number_of_borrowes;
+            """
+        ]
+
+        for query in queries:
+            self.cursor.execute(query)
+
+    def _drop_functions(self):
+        query = """
+            DROP FUNCTION IF EXISTS in_stock_for_product;
+        """
+
+        self.cursor.execute(query)
+        self.cursor.fetchall()
+
+    def drop_all(self):
+        self._drop_tables()
+        self._drop_triggers()
+        self._drop_procedures()
+        self._drop_views()
+        self._drop_functions()
+
+    def _create_tables(self):
+        queries = [
+            """CREATE TABLE IF NOT EXISTS Users (
+                -- Primary key
+                SSN VARCHAR(11) NOT NULL,
+            
+                -- Attributes
+                Name VARCHAR(250) NOT NULL,
+            
+                PRIMARY KEY(SSN)
+            );""",
+            """CREATE TABLE IF NOT EXISTS Products (
+                -- Primary key
+                ProductID VARCHAR(16) NOT NULL,
+            
+                -- Attributes
+                NameOfProduct VARCHAR(250) NOT NULL,
+                Type VARCHAR(250) NOT NULL,
+            
+                PRIMARY KEY(ProductID)
+            );""",
+            """CREATE TABLE IF NOT EXISTS Items (
+                -- Primary key
+                ItemID BINARY(16) NOT NULL,
+            
+                -- Foreign Key
+                ProductID VARCHAR(16) NOT NULL,
+            
+                -- Attributes
+                Size VARCHAR(4),
+                Quality FLOAT NOT NULL,
+            
+                PRIMARY KEY(ItemID),
+            
+                CONSTRAINT FKs
+                    FOREIGN KEY(ProductID) REFERENCES Products(ProductID)
+            );""",
+            """CREATE TABLE IF NOT EXISTS Lendings (
+                -- Primary key
+                LendingID BINARY(16) NOT NULL,
+            
+                -- Foreign Key
+                SSN VARCHAR(11) NOT NULL,
+                ItemID BINARY(16) NOT NULL,
+            
+                -- Attributes
+                BorrowingDate DATE NOT NULL,
+                ReturnDate DATE,
+            
+                PRIMARY KEY(LendingID),
+            
+                CONSTRAINT FK1
+                    FOREIGN KEY(SSN) REFERENCES Users(SSN),
+                CONSTRAINT FK2
+                    FOREIGN KEY(ItemID) REFERENCES Items(ItemID)
+            );""",
+
+        ]
+
+        for query in queries:
+            self.cursor.execute(query)
+
+    def _create_triggers(self):
+        queries = [
+            """
+            CREATE TRIGGER IF NOT EXISTS check_borrowed
+                BEFORE INSERT ON Lendings
+                FOR EACH ROW
+                BEGIN
+                    DECLARE borrowed INT;
+            
+                    SELECT
+                        COUNT(*)
+                    INTO
+                        borrowed
+                    FROM
+                        Lendings
+                    WHERE
+                        ItemID = NEW.ItemID
+                    AND
+                        ReturnDate IS NULL;
+            
+                    IF borrowed > 0 THEN
+                        SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = 'Item is already borrowed';
+                    END IF;
+                END;
+            """,
+            """
+            CREATE TRIGGER IF NOT EXISTS update_quality
+                AFTER UPDATE ON Lendings
+                FOR EACH ROW
+                BEGIN
+                    IF OLD.ReturnDate IS NULL AND NEW.ReturnDate IS NOT NULL THEN
+                        UPDATE
+                            Items
+                        SET
+                            Quality = (Quality - 0.10)
+                        WHERE
+                            ItemID = NEW.ItemID;
+                    END IF;
+                END;
+            """
+        ]
+
+        for query in queries:
+            self.cursor.execute(query)
+
+    def _create_functions(self):
+        query = """
+            CREATE FUNCTION IF NOT EXISTS in_stock_for_product (product CHAR(16), size CHAR(5))
+            RETURNS INT
+            DETERMINISTIC
+            BEGIN
+                DECLARE NrIn INT;
+            
+                SELECT COUNT(*) INTO NrIn
+                FROM
+                    Items i
+                LEFT JOIN
+                    Lendings l
+                ON
+                    i.ItemID = l.ItemID AND l.ReturnDate IS NULL
+                WHERE
+                    i.ProductID = product
+                AND
+                    (i.Size = size OR (i.Size IS NULL AND size IS NULL))
+                AND
+                    l.ItemID IS NULL;
+            
+                RETURN NrIn;
+            END;
+        """
+
+        for result in self.cursor.execute(query, multi=True):
+            pass  # Ensure we iterate through all results
+
+    def _create_procedures(self):
+        query = """
+            CREATE PROCEDURE IF NOT EXISTS return_item(IN item_id BINARY(16))
+            BEGIN
+                UPDATE
+                    Lendings
+                SET
+                    ReturnDate = CURDATE()
+                WHERE
+                    ItemID = item_id
+                AND
+                    ReturnDate IS NULL;
+            END;
+        """
+
+        for result in self.cursor.execute(query, multi=True):
+            pass  # Ensure we iterate through all results
+
+    def _create_views(self):
+        query = """
+            CREATE VIEW number_of_borrowes AS
+            SELECT
+                u.SSN,
+                u.Name,
+                COUNT(DISTINCT tot.LendingID) AS TotalLendings,
+                COUNT(DISTINCT curr.LendingID) AS currLendings
+            FROM
+                Users u
+            LEFT JOIN
+                Lendings tot ON u.SSN = tot.SSN
+            LEFT JOIN
+                Lendings curr ON u.SSN = curr.SSN
+            AND
+                curr.ReturnDate IS NULL
+            GROUP BY
+                u.SSN,
+                u.Name
+            ORDER BY
+                TotalLendings DESC;
+            
+            CREATE VIEW show_borrowed_view AS
+                SELECT
+                    l.LendingID,
+                    u.SSN,
+                    u.Name,
+                    i.ItemID,
+                    p.NameOfProduct,
+                    i.Size,
+                    l.BorrowingDate,
+                    l.ReturnDate
+                FROM
+                    Users u
+                JOIN
+                    Lendings l ON u.SSN = l.SSN
+                JOIN
+                    Items i ON l.ItemID = i.ItemID
+                JOIN
+                    Products p ON i.ProductID = p.ProductID;
+        """
+
+        for result in self.cursor.execute(query, multi=True):
+            pass  # Ensure we iterate through all results
+
+    def create_all(self):
+        self._create_tables()
+        self._create_triggers()
+        self._create_functions()
+        self._create_procedures()
+        self._create_views()
+
 
 if __name__ == "__main__":
     db = DBHandler()
-    print(db.get_rand_item())
+    print(db.test())
 

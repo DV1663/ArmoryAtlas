@@ -15,7 +15,7 @@ CREATE TABLE `Items` (
 
 use std::fmt::Display;
 use anyhow::Result;
-use prettytable::{format, row, Row, Table};
+use prettytable::{row, Row, Table};
 use pyo3::{FromPyObject, pymethods};
 use rand::Rng;
 use rayon::prelude::*;
