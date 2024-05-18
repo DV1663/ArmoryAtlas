@@ -29,7 +29,7 @@ jobs:
       - name: Install OpenSSL and pkg-config
         run: |
           sudo apt-get update
-          sudo apt-get install -y openssl libssl-dev pkg-config python3
+          sudo apt-get install -y openssl libssl-dev pkg-config python3 python3-dev
           echo "::add-path::/usr/bin"
           echo "::add-path::/usr/local/bin"
       - name: Verify pkg-config installation
