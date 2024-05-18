@@ -380,16 +380,6 @@ class DBHandler:
         items_list = [ItemProduct(*item) for item in items]
         return items_list
 
-    def test(self):
-        query = """
-            SELECT * from Users;
-                    """
-
-        self.cursor.execute(query)
-        borrowes = self.cursor.fetchall()
-
-        return borrowes
-
     def _drop_tables(self):
         queries = [
             """
