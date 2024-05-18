@@ -21,6 +21,7 @@ permissions:
 jobs:
   linux:
     runs-on: ubuntu-latest
+    if: "startsWith(github.ref, 'refs/tags/')"
     strategy:
       matrix:
         target: [ x86_64, aarch64, armv7, s390x, ppc64le ]
@@ -54,6 +55,7 @@ jobs:
 
   windows:
     runs-on: windows-latest
+    if: "startsWith(github.ref, 'refs/tags/')"
     strategy:
       matrix:
         target: [x64, x86]
@@ -81,6 +83,7 @@ jobs:
 
   macos:
     runs-on: macos-latest
+    if: "startsWith(github.ref, 'refs/tags/')"
     strategy:
       matrix:
         target: [x86_64, aarch64]
@@ -107,6 +110,7 @@ jobs:
 
   macos-m1:
     runs-on: macos-14
+    if: "startsWith(github.ref, 'refs/tags/')"
     strategy:
       matrix:
         target: [aarch64-apple-darwin]
@@ -133,6 +137,7 @@ jobs:
 
   sdist:
     runs-on: ubuntu-latest
+    if: "startsWith(github.ref, 'refs/tags/')"
     steps:
       - uses: actions/checkout@v4
       - name: Install OpenSSL
@@ -152,6 +157,7 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
+    if: "startsWith(github.ref, 'refs/tags/')"
     needs: [ linux, windows, macos, macos-m1, sdist ]
     steps:
       - name: Download wheels artifacts
