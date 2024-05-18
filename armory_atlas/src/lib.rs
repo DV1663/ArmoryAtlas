@@ -1,7 +1,7 @@
 use std::fs;
 use std::fs::File;
 
-use crate::cli::{Command, CommandType, GenerateArgs, GenerateSubCommands, GetSubCommands};
+use crate::cli::{Command, CommandType, GenerateArgs, GenerateSubCommands, GetSubCommands, ReturnSubCommands};
 use crate::items::{insert_items, Item};
 use crate::products::insert_products;
 use anyhow::Result;
@@ -36,8 +36,11 @@ pub const DATABASE_HANDLER: &str = include_str!("../ArmoryAtlasDBHandler.py");
 
 use crate::config::{get_config, write_config};
 use crate::db_handler::{DBHandler, DetailedItem, DetailedItems};
+use crate::db_handler::in_stock_size::InStockSizes;
 use crate::db_handler::loans::DetailedLoans;
+use crate::db_handler::users::Users;
 use crate::password_handler::get_db_pass;
+use crate::users::User;
 
 #[derive(Debug, FromPyObject, Clone)]
 #[cfg_attr(feature = "rs-db", derive(sqlx::FromRow))]
@@ -200,16 +203,52 @@ pub fn run_cli(args: Option<Vec<String>>) -> Result<()> {
         Some(CommandType::Get(args)) => {
             match args.subcommands {
                 GetSubCommands::Items(args) => {
-                    let items: DetailedItems = db_handler.get_items()?[..args.limit.unwrap()].to_vec().into();
-                    println!("{}", Table::from(items))
+                    if args.limit.is_none() {
+                        // if limit is not specified we get all
+                        let items: DetailedItems = db_handler.get_items()?.into();
+                        println!("{}", Table::from(items))
+                    } else {
+                        let items: DetailedItems = db_handler.get_items()?[..args.limit.unwrap()].to_vec().into();
+                        println!("{}", Table::from(items))
+                    }
                 }
                 GetSubCommands::InStock(args) => {
                     let items = db_handler.get_in_stock_size(args.pruduct_id, args.size)?;
                     println!("{}", Table::from(items));
                 }
                 GetSubCommands::Loans(args) => {
-                    let loans: DetailedLoans = db_handler.get_loans()?[..args.limit.unwrap()].to_vec().into();
-                    println!("{}", Table::from(loans));
+                    if args.limit.is_none() {
+                        // if limit is not specified we get all
+                        let loans: DetailedLoans = if args.ssn.is_some() {
+                            db_handler.user_all_borrowed(args.ssn.unwrap())?.into()
+                        } else {
+                            db_handler.get_loans()?.into()
+                        };
+                        println!("{}", Table::from(loans))
+                    } else {
+                        let loans: DetailedLoans = if args.ssn.is_some() {
+                            db_handler.user_all_borrowed(args.ssn.unwrap())?[..args.limit.unwrap()].to_vec().into()
+                        } else {
+                            db_handler.get_loans()?[..args.limit.unwrap()].to_vec().into()
+                        };
+                        println!("{}", Table::from(loans))
+                    }
+                }
+                GetSubCommands::Users(args) => {
+                    if args.limit.is_none() {
+                        let users: Users = db_handler.get_users()?.into();
+                        println!("{}", Table::from(users));
+                    } else {
+                        let users: Users = db_handler.get_users()?[..args.limit.unwrap()].to_vec().into();
+                        println!("{}", Table::from(users));
+                    }
+                }
+            }
+        }
+        Some(CommandType::Return(args)) => {
+            match args.subcommands {
+                ReturnSubCommands::Item(args) => {
+                    db_handler.return_item(args.item_id)?;
                 }
             }
         }

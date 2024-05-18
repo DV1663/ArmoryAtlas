@@ -20,6 +20,23 @@ pub enum CommandType {
     Generate(GenerateArgs),
     Manage(ManageArgs),
     Get(GetArgs),
+    Return(ReturnArgs),
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct ReturnArgs {
+    #[command(subcommand)]
+    pub subcommands: ReturnSubCommands,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum ReturnSubCommands {
+    Item(ReturnItemArgs),
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct ReturnItemArgs {
+    pub item_id: String,
 }
 
 #[derive(Args, Debug, Clone)]
@@ -33,17 +50,23 @@ pub enum GetSubCommands {
     Items(GetItemsArgs),
     InStock(InStockArgs),
     Loans(GetLoansArgs),
+    Users(GetUsersArgs),
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct GetUsersArgs {
+    pub limit: Option<usize>,
 }
 
 #[derive(Args, Debug, Clone)]
 pub struct GetLoansArgs {
-    #[arg(default_value = "10")]
+    pub ssn: Option<String>,
+    #[arg(long, short)]
     pub limit: Option<usize>,
 }
 
 #[derive(Args, Debug, Clone)]
 pub struct GetItemsArgs {
-    #[arg(default_value = "10")]
     pub limit: Option<usize>,
 }
 

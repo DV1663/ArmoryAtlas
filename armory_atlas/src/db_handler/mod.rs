@@ -1,18 +1,21 @@
-pub mod in_stock_size;
-pub mod loans;
+use std::ops::Index;
 
-use std::ops::{Index, Range, RangeTo};
 use prettytable::{Row, row, Table};
-use crate::items::Item;
-use crate::users::Users;
-use crate::{ItemProduct, DATABASE_HANDLER};
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyTuple};
 use rayon::prelude::*;
+
+use crate::{DATABASE_HANDLER, ItemProduct};
 use crate::db_handler::in_stock_size::{InStockSize, InStockSizes};
-use crate::db_handler::loans::{DetailedLoan, DetailedLoans, PyDetailedLoan};
+use crate::db_handler::loans::{DetailedLoan, PyDetailedLoan};
+use crate::db_handler::users::PyUser;
+use crate::items::Item;
 use crate::leandings::Loans;
 use crate::products::Product;
+use crate::users::User;
+
+pub mod in_stock_size;
+pub mod loans;
+pub mod users;
 
 #[derive(Clone)]
 #[pyclass]
@@ -36,7 +39,7 @@ impl From<ItemProduct> for DetailedItem {
             product_id: item_product.product_id.clone(),
             product_name: item_product.product_name.clone(),
             product_type: item_product.product_type.clone(),
-            quantity: item_product.quantity.clone(),
+            quantity: item_product.quantity,
             size: item_product.size.clone(),
         }
     }
@@ -136,11 +139,11 @@ impl DBHandler {
         Python::with_gil(|py| {
             let items = self.pool.call_method1(py, "get_in_stock_size", (product_id, size))?;
             let items: Vec<InStockSize> = items.extract(py)?;
-            
+
             Ok(items.into())
         })
     }
-    
+
     pub fn get_loans(&self) -> anyhow::Result<Vec<DetailedLoan>> {
         Python::with_gil(|py| {
             let loans = self.pool.call_method0(py, "get_loans")?;
@@ -176,10 +179,10 @@ impl DBHandler {
         })
     }
 
-    pub fn get_rand_user(&self) -> anyhow::Result<Users> {
+    pub fn get_rand_user(&self) -> anyhow::Result<User> {
         Python::with_gil(|py| {
             let users = self.pool.call_method0(py, "get_rand_user")?;
-            let user: Users = users.extract(py)?;
+            let user: User = users.extract(py)?;
             Ok(user)
         })
     }
@@ -198,7 +201,7 @@ impl DBHandler {
         })
     }
     
-    pub fn insert_user(&self, user: Users) -> anyhow::Result<()> {
+    pub fn insert_user(&self, user: User) -> anyhow::Result<()> {
         Python::with_gil(|py| {
             self.pool.call_method1(py, "insert_user", (user,))?;
             Ok(())
@@ -235,6 +238,34 @@ impl DBHandler {
         Python::with_gil(|py| {
             self.pool.call_method0(py, "create_all")?;
             Ok(())
+        })
+    }
+
+    pub fn get_users(&self) -> anyhow::Result<Vec<User>> {
+        Python::with_gil(|py| {
+            let users = self.pool.call_method0(py, "get_users")?;
+            let users: Vec<PyUser> = users.extract(py)?;
+            let users = users.into_par_iter().map(User::from).collect();
+            Ok(users)
+        })
+    }
+    
+    pub fn return_item(&self, item_id: String) -> anyhow::Result<()> {
+        Python::with_gil(|py| {
+            self.pool.call_method1(py, "return_item", (item_id,))?;
+            Ok(())
+        })
+    }
+    
+    pub fn user_all_borrowed(&self, ssn: String) -> anyhow::Result<Vec<DetailedLoan>> {
+        Python::with_gil(|py| {
+            let loans = self.pool.call_method1(py, "user_all_borrowed", (ssn,))?;
+            let loans: Vec<PyDetailedLoan> = loans.extract(py)?;
+            let loans: Vec<DetailedLoan> = loans
+                .into_par_iter()
+                .map(DetailedLoan::from)
+                .collect();
+            Ok(loans)
         })
     }
 }

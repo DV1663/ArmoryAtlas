@@ -14,26 +14,26 @@ pub fn insert_users(db_handler: &DBHandler, num_users: usize) -> Result<()> {
     Ok(())
 }
 
-fn generate_users(num_users: usize) -> Vec<Users> {
+fn generate_users(num_users: usize) -> Vec<User> {
     let mut users = Vec::new();
 
     for _ in 0..num_users {
-        users.push(Users::new_random());
+        users.push(User::new_random());
     }
 
     users
 }
 
-#[derive(Debug, FromPyObject)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "rs-db", derive(sqlx::FromRow))]
 #[pyo3::pyclass]
-pub struct Users {
+pub struct User {
     pub ssn: String,
     pub name: String,
 }
 
 #[pyo3::pymethods]
-impl Users {
+impl User {
     #[new]
     pub fn new_random() -> Self {
         let gender = Self::generate_random_gender();
@@ -242,7 +242,7 @@ mod tests {
 
     #[test]
     fn test_new_random() {
-        let user = Users::new_random();
+        let user = User::new_random();
         println!("{:?}", user);
     }
 }

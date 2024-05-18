@@ -180,7 +180,9 @@ class DBHandler:
             JOIN Users u ON l.SSN = u.SSN
             JOIN Items i ON l.ItemID = i.ItemID
             JOIN Products p ON i.ProductID = p.ProductID
+
             ORDER BY 
+                u.SSN,
                 CASE WHEN l.ReturnDate IS NULL THEN 0 ELSE 1 END,
                 l.BorrowingDate DESC,
                 l.ReturnDate DESC;
@@ -189,7 +191,6 @@ class DBHandler:
         self.cursor.execute(query)
         loans = self.cursor.fetchall()
         loans_list = [AllBorrowed(*loan) for loan in loans]
-        print(loans_list[0])
         return loans_list
 
     def get_items(self) -> list[ItemProduct]:
@@ -244,13 +245,28 @@ class DBHandler:
         except mysql.connector.Error as err:
             raise err
 
-    def return_item(self, lending_id: str):
+    def return_item(self, item_id: str):
         query = f"""
-            CALL return_item('{lending_id}');
+            CALL return_item(UUID_TO_BIN('{item_id}'));
         """
 
-        # Execute the stored procedure
-        self.cursor.execute(query, multi=True)
+        try:
+            # Execute the stored procedure
+            results = self.cursor.execute(query, multi=True)
+
+            # Fetch results to ensure procedure executed
+            for result in results:
+                if result.with_rows:
+                    data = result.fetchall()
+                    print("Procedure output:", data)
+                else:
+                    print("Procedure affected rows:", result.rowcount)
+
+            # Commit the transaction
+            self.db.commit()
+            print("Item returned successfully")
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
     def user_all_borrowed(self, ssn: str) -> list[AllBorrowed]:
         query = f"""
@@ -657,5 +673,5 @@ class DBHandler:
 
 if __name__ == "__main__":
     db = DBHandler()
-    print(db.test())
+    db.return_item("177bf0f5-1434-11ef-ad4b-00e04c0313ab")
 

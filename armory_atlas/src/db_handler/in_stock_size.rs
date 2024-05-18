@@ -1,11 +1,3 @@
-/*
-    class InStockSize:
-        def __init__(self, product_id, size, tot_in):
-            self.product_id = product_id
-            self.size = size
-            self.tot_in = tot_in
-*/
-
 use std::ops::Index;
 use prettytable::{Row, row, Table};
 use pyo3::{FromPyObject, pyclass};

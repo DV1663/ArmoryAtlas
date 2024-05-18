@@ -16,7 +16,7 @@ env:
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   linux:
