@@ -118,6 +118,7 @@ impl From<DetailedItems> for Table {
 impl DBHandler {
     #[new]
     pub fn new() -> anyhow::Result<Self> {
+        pyo3::prepare_freethreaded_python();
         let pool = DBHandler::get_db_handler_obj()?;
         Ok(Self { pool })
     }

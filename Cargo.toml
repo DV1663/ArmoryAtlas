@@ -7,7 +7,7 @@ resolver = "2"
 [workspace.dependencies]
 # Pyo3
 pyo3_bindgen = { version = "0.5.0" }
-pyo3 = { version = "0.21.2", features = ["anyhow", "serde", "auto-initialize", "chrono", "experimental-async"] }
+pyo3 = { version = "0.21.2", features = ["anyhow", "serde", "chrono", "experimental-async"] }
 
 # error handling
 anyhow = { version = "1.0.68", features = ["backtrace"] }
