@@ -43,7 +43,7 @@ pub struct ReturnItemArgs {
 pub struct GetArgs {
     #[command(subcommand)]
     pub subcommands: GetSubCommands,
-} 
+}
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum GetSubCommands {
@@ -117,6 +117,11 @@ pub struct GenerateArgs {
     #[command(subcommand)]
     pub subcommands: Option<GenerateSubCommands>,
 
-    #[arg(short, long, default_value = "10", help = "Number of items to generate if no subcommand is provided")]
+    #[arg(
+        short,
+        long,
+        default_value = "10",
+        help = "Number of items to generate if no subcommand is provided"
+    )]
     pub num_to_generate: Option<usize>,
 }

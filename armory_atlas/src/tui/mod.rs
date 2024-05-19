@@ -136,7 +136,10 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::R
             error!("{err:?}");
             return Ok(false);
         }
-    }.iter().map(|item| item.into()).collect();
+    }
+    .iter()
+    .map(|item| item.into())
+    .collect();
 
     // Store the iterator and its values in variables
     let data_iterator: Vec<Vec<ItemProduct>> =
@@ -173,7 +176,8 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::R
                         let search_result = search_items(&query).await;
                         match search_result {
                             Ok(items) => {
-                                let items: Vec<ItemProduct> = items.iter().map(|item| item.into()).collect();
+                                let items: Vec<ItemProduct> =
+                                    items.iter().map(|item| item.into()).collect();
                                 data_to_display.clone_from(&items);
                             }
                             Err(e) => {

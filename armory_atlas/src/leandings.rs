@@ -1,5 +1,5 @@
-use chrono::{NaiveDate, Datelike};
-use pyo3::{FromPyObject, pymethods};
+use chrono::{Datelike, NaiveDate};
+use pyo3::{pymethods, FromPyObject};
 use rand::Rng;
 
 use crate::db_handler::DBHandler;
@@ -9,7 +9,7 @@ pub fn insert_leandings(db_handler: &DBHandler, num_leandings: usize) -> anyhow:
         let leanding = Loans::new_random()?;
         db_handler.insert_loan(leanding)?;
     }
-    
+
     Ok(())
 }
 
@@ -52,11 +52,13 @@ impl Loans {
         let month = rng.gen_range(1..=12);
         let day = match month {
             4 | 6 | 9 | 11 => rng.gen_range(1..=30),
-            2 => if year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) {
-                rng.gen_range(1..=29)
-            } else {
-                rng.gen_range(1..=28)
-            },
+            2 => {
+                if year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) {
+                    rng.gen_range(1..=29)
+                } else {
+                    rng.gen_range(1..=28)
+                }
+            }
             _ => rng.gen_range(1..=31),
         };
 
@@ -69,7 +71,7 @@ impl Loans {
         let product = db.get_rand_item()?;
         let borrowing_date = Loans::generate_random_date(None);
         let user = db.get_rand_user()?;
-        
+
         // randomly choose if the item is reutrned or not
         let mut rng = rand::thread_rng();
         let return_date = if rng.gen_bool(0.2) {
@@ -86,7 +88,7 @@ impl Loans {
             return_date,
         })
     }
-    
+
     #[pyo3(name = "__repr__")]
     pub fn repr(&self) -> String {
         format!(
@@ -94,27 +96,27 @@ impl Loans {
             self.leanding_id, self.ssn, self.item_id, self.borrowing_date, self.return_date
         )
     }
-    
+
     #[getter(id)]
     pub fn get_leanding_id(&self) -> String {
         self.leanding_id.clone()
     }
-    
+
     #[getter(ssn)]
     pub fn get_ssn(&self) -> String {
         self.ssn.clone()
     }
-    
+
     #[getter(item_id)]
     pub fn get_product_id(&self) -> String {
         self.item_id.clone()
     }
-    
+
     #[getter(borrowing_date)]
     pub fn get_borrowing_date(&self) -> NaiveDate {
         self.borrowing_date
     }
-    
+
     #[getter(return_date)]
     pub fn get_return_date(&self) -> Option<NaiveDate> {
         self.return_date

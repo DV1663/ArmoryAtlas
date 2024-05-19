@@ -1,12 +1,12 @@
+use crate::db_handler::DBHandler;
 use anyhow::Result;
 use chrono::{Datelike, NaiveDate};
 use pyo3::FromPyObject;
 use rand::Rng;
-use crate::db_handler::DBHandler;
 
 pub fn insert_users(db_handler: &DBHandler, num_users: usize) -> Result<()> {
     let users = generate_users(num_users);
-    
+
     for user in users {
         db_handler.insert_user(user)?;
     }
@@ -53,7 +53,8 @@ impl User {
 
     #[staticmethod]
     fn generate_random_name(gender: bool) -> (String, String) {
-        let last_names = ["Smith",
+        let last_names = [
+            "Smith",
             "Johnson",
             "Williams",
             "Brown",
@@ -62,49 +63,66 @@ impl User {
             "Miller",
             "Davis",
             "Rodriguez",
-            "Martinez"];
+            "Martinez",
+        ];
 
         // Get a random number generator
         let mut rng = rand::thread_rng();
-        
+
         let first_name = {
             let male_names: Vec<&str> = vec![
-                "Liam", "Noah", "Oliver", "Elijah", "William",
-                "James", "Benjamin", "Lucas", "Henry", "Alexander"
+                "Liam",
+                "Noah",
+                "Oliver",
+                "Elijah",
+                "William",
+                "James",
+                "Benjamin",
+                "Lucas",
+                "Henry",
+                "Alexander",
             ];
 
             let female_names: Vec<&str> = vec![
-                "Olivia", "Emma", "Ava", "Charlotte", "Sophia",
-                "Amelia", "Isabella", "Mia", "Evelyn", "Harper"
+                "Olivia",
+                "Emma",
+                "Ava",
+                "Charlotte",
+                "Sophia",
+                "Amelia",
+                "Isabella",
+                "Mia",
+                "Evelyn",
+                "Harper",
             ];
-            
+
             if gender {
                 male_names[rng.gen_range(0..male_names.len())].to_string()
             } else {
                 female_names[rng.gen_range(0..female_names.len())].to_string()
             }
         };
-        
+
         let last_name = last_names[rng.gen_range(0..last_names.len())].to_string();
 
         (first_name, last_name)
     }
-    
+
     #[getter(ssn)]
     pub fn get_ssn(&self) -> String {
         self.ssn.clone()
     }
-    
+
     #[getter(name)]
     pub fn get_name(&self) -> String {
         self.name.clone()
     }
-    
+
     #[pyo3(name = "__repr__")]
     pub fn repr(&self) -> String {
         format!("{:?}", self)
     }
-    
+
     #[pyo3(name = "__str__")]
     pub fn str(&self) -> String {
         format!("SSN: {}\nName: {}", self.ssn, self.name)
@@ -171,11 +189,11 @@ impl SSN {
         let gender_part = if gender {
             // generate a random uneaven number between 0 and 9
             let uneaven = [1, 3, 5, 7, 9];
-            
+
             uneaven[rand::thread_rng().gen_range(0..=4)].to_string()
         } else {
             let even = [0, 2, 4, 6, 8];
-            
+
             even[rand::thread_rng().gen_range(0..=4)].to_string()
         };
 
@@ -189,7 +207,7 @@ impl SSN {
         ))
     }
 
-    pub fn generate_control_digit(first_nine: &String) -> String {
+    pub fn generate_control_digit(first_nine: &str) -> String {
         // cast the string to a vector of signed integer digits
 
         let digits: Vec<i32> = first_nine

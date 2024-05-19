@@ -1,10 +1,9 @@
 use std::ops::Index;
 
-use prettytable::{Row, row, Table};
+use prettytable::{row, Row, Table};
 use pyo3::prelude::*;
 use rayon::prelude::*;
 
-use crate::{DATABASE_HANDLER, ItemProduct};
 use crate::db_handler::in_stock_size::{InStockSize, InStockSizes};
 use crate::db_handler::loans::{DetailedLoan, PyDetailedLoan};
 use crate::db_handler::users::PyUser;
@@ -12,6 +11,7 @@ use crate::items::Item;
 use crate::leandings::Loans;
 use crate::products::Product;
 use crate::users::User;
+use crate::{ItemProduct, DATABASE_HANDLER};
 
 pub mod in_stock_size;
 pub mod loans;
@@ -19,17 +19,17 @@ pub mod users;
 
 /// The main struct for the database handler
 ///
-/// Currently, it's built with a python implementation used inside the rust code but will later be 
+/// Currently, it's built with a python implementation used inside the rust code but will later be
 /// replaced with a pure rust implementation.
-/// 
+///
 /// # Example
-/// 
+///
 /// ``` no_run
 /// # use armory_atlas_lib::db_handler::DBHandler;
-/// 
+///
 /// let db_handler = DBHandler::new().unwrap();
 /// ```
-/// 
+///
 #[derive(Clone)]
 #[pyclass]
 pub struct DBHandler {
@@ -52,7 +52,7 @@ impl DetailedItem {
     pub fn repr(&self) -> String {
         format!("{:?}", self)
     }
-    
+
     #[pyo3(name = "__str__")]
     pub fn str(&self) -> String {
         format!("{:?}", self)
@@ -97,13 +97,25 @@ impl From<&DetailedItem> for ItemProduct {
 
 impl From<DetailedItem> for Row {
     fn from(value: DetailedItem) -> Self {
-        row![value.product_id, value.product_name, value.product_type, value.quantity, value.size]
+        row![
+            value.product_id,
+            value.product_name,
+            value.product_type,
+            value.quantity,
+            value.size
+        ]
     }
 }
 
 impl From<&DetailedItem> for Row {
     fn from(value: &DetailedItem) -> Self {
-        row![value.product_id, value.product_name, value.product_type, value.quantity, value.size]
+        row![
+            value.product_id,
+            value.product_name,
+            value.product_type,
+            value.quantity,
+            value.size
+        ]
     }
 }
 
@@ -121,7 +133,7 @@ impl DetailedItems {
     pub fn repr(&self) -> String {
         format!("{:?}", self)
     }
-    
+
     #[pyo3(name = "__str__")]
     pub fn str(&self) -> String {
         format!("{:?}", self)
@@ -151,7 +163,13 @@ impl From<DetailedItems> for Vec<DetailedItem> {
 impl From<DetailedItems> for Table {
     fn from(items: DetailedItems) -> Self {
         let mut table = Table::new();
-        table.add_row(row!["Product ID", "Product Name", "Product Type", "Quantity", "Size"]);
+        table.add_row(row![
+            "Product ID",
+            "Product Name",
+            "Product Type",
+            "Quantity",
+            "Size"
+        ]);
         for item in items.0 {
             table.add_row((&item).into());
         }
@@ -172,18 +190,20 @@ impl DBHandler {
         Python::with_gil(|py| {
             let items = self.pool.call_method0(py, "get_items")?;
             let items: Vec<ItemProduct> = items.extract(py)?;
-            let items: Vec<DetailedItem> = items
-                .into_par_iter()
-                .map(DetailedItem::from)
-                .collect();
+            let items: Vec<DetailedItem> = items.into_par_iter().map(DetailedItem::from).collect();
             Ok(items)
-            
         })
     }
 
-    pub fn get_in_stock_size(&self, product_id: String, size: String) -> anyhow::Result<InStockSizes> {
+    pub fn get_in_stock_size(
+        &self,
+        product_id: String,
+        size: String,
+    ) -> anyhow::Result<InStockSizes> {
         Python::with_gil(|py| {
-            let items = self.pool.call_method1(py, "get_in_stock_size", (product_id, size))?;
+            let items = self
+                .pool
+                .call_method1(py, "get_in_stock_size", (product_id, size))?;
             let items: Vec<InStockSize> = items.extract(py)?;
 
             Ok(items.into())
@@ -194,10 +214,7 @@ impl DBHandler {
         Python::with_gil(|py| {
             let loans = self.pool.call_method0(py, "get_loans")?;
             let loans: Vec<PyDetailedLoan> = loans.extract(py)?;
-            let loans: Vec<DetailedLoan> = loans
-                .into_par_iter()
-                .map(DetailedLoan::from)
-                .collect();
+            let loans: Vec<DetailedLoan> = loans.into_par_iter().map(DetailedLoan::from).collect();
             Ok(loans)
         })
     }
@@ -232,43 +249,40 @@ impl DBHandler {
             Ok(user.into())
         })
     }
-    
+
     pub fn insert_product(&self, product: Product) -> anyhow::Result<()> {
         Python::with_gil(|py| {
             self.pool.call_method1(py, "insert_product", (product,))?;
             Ok(())
         })
     }
-    
+
     pub fn insert_item(&self, item: Item) -> anyhow::Result<()> {
         Python::with_gil(|py| {
             self.pool.call_method1(py, "insert_item", (item,))?;
             Ok(())
         })
     }
-    
+
     pub fn insert_user(&self, user: User) -> anyhow::Result<()> {
         Python::with_gil(|py| {
             self.pool.call_method1(py, "insert_user", (user,))?;
             Ok(())
         })
     }
-    
+
     pub fn insert_loan(&self, loan: Loans) -> anyhow::Result<()> {
         Python::with_gil(|py| {
             self.pool.call_method1(py, "insert_loan", (loan,))?;
             Ok(())
         })
     }
-    
+
     pub fn search_items(&self, query: &str) -> anyhow::Result<Vec<DetailedItem>> {
         Python::with_gil(|py| {
             let items = self.pool.call_method1(py, "search_items", (query,))?;
             let items: Vec<ItemProduct> = items.extract(py)?;
-            let items: Vec<DetailedItem> = items
-                .into_par_iter()
-                .map(DetailedItem::from)
-                .collect();
+            let items: Vec<DetailedItem> = items.into_par_iter().map(DetailedItem::from).collect();
             Ok(items)
         })
     }
@@ -295,22 +309,19 @@ impl DBHandler {
             Ok(users)
         })
     }
-    
+
     pub fn return_item(&self, item_id: String) -> anyhow::Result<()> {
         Python::with_gil(|py| {
             self.pool.call_method1(py, "return_item", (item_id,))?;
             Ok(())
         })
     }
-    
+
     pub fn user_all_borrowed(&self, ssn: String) -> anyhow::Result<Vec<DetailedLoan>> {
         Python::with_gil(|py| {
             let loans = self.pool.call_method1(py, "user_all_borrowed", (ssn,))?;
             let loans: Vec<PyDetailedLoan> = loans.extract(py)?;
-            let loans: Vec<DetailedLoan> = loans
-                .into_par_iter()
-                .map(DetailedLoan::from)
-                .collect();
+            let loans: Vec<DetailedLoan> = loans.into_par_iter().map(DetailedLoan::from).collect();
             Ok(loans)
         })
     }
@@ -338,7 +349,7 @@ mod tests {
         let items = db_handler.get_items();
         assert!(items.is_ok());
     }
-    
+
     #[test]
     fn test_get_rand_item() {
         let db_handler = DBHandler::new();
@@ -346,13 +357,13 @@ mod tests {
 
         let db_handler = db_handler.unwrap();
         let item = db_handler.get_rand_item();
-        
+
         assert!(item.is_ok());
 
         let item = item.unwrap();
         println!("{:?}", item);
     }
-    
+
     #[test]
     fn test_get_rand_user() {
         let db_handler = DBHandler::new();

@@ -1,8 +1,8 @@
-use std::ops::Index;
-use prettytable::{Row, row, Table};
-use pyo3::{FromPyObject, pyclass, pymethods};
-use rayon::prelude::*;
 use crate::users::User;
+use prettytable::{row, Row, Table};
+use pyo3::{pyclass, pymethods, FromPyObject};
+use rayon::prelude::*;
+use std::ops::Index;
 
 #[derive(FromPyObject)]
 pub struct PyUser {
@@ -20,12 +20,12 @@ impl Users {
     fn get_users(&self) -> Vec<User> {
         self.0.clone()
     }
-    
+
     #[pyo3(name = "__repr__")]
     pub fn repr(&self) -> String {
         format!("{:?}", self)
     }
-    
+
     #[pyo3(name = "__str__")]
     pub fn str(&self) -> String {
         format!("{:?}", self)
@@ -52,19 +52,13 @@ impl From<User> for PyUser {
 
 impl From<Vec<PyUser>> for Users {
     fn from(py_users: Vec<PyUser>) -> Self {
-        Self(py_users
-            .into_par_iter()
-            .map(User::from)
-            .collect())
+        Self(py_users.into_par_iter().map(User::from).collect())
     }
 }
 
 impl From<Users> for Vec<PyUser> {
     fn from(users: Users) -> Self {
-        users.0
-            .into_par_iter()
-            .map(|user| user.into())
-            .collect()
+        users.0.into_par_iter().map(|user| user.into()).collect()
     }
 }
 
@@ -94,7 +88,7 @@ impl From<User> for Row {
 
 impl Index<usize> for Users {
     type Output = User;
-    
+
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[index]
     }
@@ -107,8 +101,7 @@ impl From<Users> for Table {
         for user in users.0 {
             table.add_row(user.into());
         }
-        
+
         table
     }
 }
-

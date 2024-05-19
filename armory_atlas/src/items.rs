@@ -13,13 +13,13 @@ CREATE TABLE `Items` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 */
 
-use std::fmt::Display;
+use crate::db_handler::DBHandler;
 use anyhow::Result;
 use prettytable::{row, Row, Table};
-use pyo3::{FromPyObject, pymethods};
+use pyo3::{pymethods, FromPyObject};
 use rand::Rng;
 use rayon::prelude::*;
-use crate::db_handler::DBHandler;
+use std::fmt::Display;
 
 use crate::products;
 
@@ -76,27 +76,27 @@ impl Item {
             quality,
         }
     }
-    
+
     #[getter(item_id)]
     pub fn get_item_id(&self) -> String {
         self.item_id.clone()
     }
-    
+
     #[getter(product_id)]
     pub fn get_product_id(&self) -> String {
         self.product_id.clone()
     }
-    
+
     #[getter(size)]
     pub fn get_size(&self) -> String {
         self.size.clone()
     }
-    
+
     #[getter(quality)]
     pub fn get_quality(&self) -> f32 {
         self.quality
     }
-    
+
     #[pyo3(name = "__repr__")]
     pub fn repr(&self) -> String {
         self.to_string()
@@ -106,7 +106,12 @@ impl Item {
 impl From<Item> for Row {
     fn from(item: Item) -> Self {
         if item.item_id.is_empty() {
-            row!["WILL_BE_GENERATED", item.product_id, item.size, item.quality]
+            row![
+                "WILL_BE_GENERATED",
+                item.product_id,
+                item.size,
+                item.quality
+            ]
         } else {
             row![item.item_id, item.product_id, item.size, item.quality]
         }
@@ -195,11 +200,11 @@ pub fn generate_items(num_items: usize) -> Result<Vec<Item>> {
 
 pub fn insert_items(db_handler: &DBHandler, num_items: usize) -> Result<()> {
     let items = generate_items(num_items)?;
-    
+
     println!("Inserting these items:");
     let mut table_vec = Vec::new();
     let mut items_vec = Vec::new();
-    
+
     for item in &items {
         let tmp = TmpItem::from(item);
         let item = Item::from(tmp.clone());
@@ -209,9 +214,9 @@ pub fn insert_items(db_handler: &DBHandler, num_items: usize) -> Result<()> {
     }
 
     let table = Table::from(Items::from(table_vec)).to_string();
-    
+
     println!("{}", table);
-    
+
     for item in items {
         db_handler.insert_item(item)?;
     }

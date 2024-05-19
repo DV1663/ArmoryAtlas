@@ -1,6 +1,6 @@
+use prettytable::{row, Row, Table};
+use pyo3::{pyclass, pymethods, FromPyObject};
 use std::ops::Index;
-use prettytable::{Row, row, Table};
-use pyo3::{FromPyObject, pyclass, pymethods};
 
 #[derive(FromPyObject, Debug)]
 #[pyclass]
@@ -73,10 +73,14 @@ impl From<InStockSize> for Row {
 
 impl From<&InStockSize> for Row {
     fn from(value: &InStockSize) -> Self {
-        row![value.product_id, value.product_name, value.size, value.tot_in]
+        row![
+            value.product_id,
+            value.product_name,
+            value.size,
+            value.tot_in
+        ]
     }
 }
-
 
 impl From<InStockSize> for InStockSizes {
     fn from(in_stock_size: InStockSize) -> Self {

@@ -3,20 +3,21 @@
 use std::fs;
 use std::fs::File;
 
-use crate::cli::{Command, CommandType, GenerateArgs, GenerateSubCommands, GetSubCommands, ReturnSubCommands};
+use crate::cli::{
+    Command, CommandType, GenerateArgs, GenerateSubCommands, GetSubCommands, ReturnSubCommands,
+};
 use crate::items::{insert_items, Item};
 use crate::products::insert_products;
 use anyhow::Result;
 use chrono::Local;
-use env_logger::{Builder, Env};
-use pyo3::prelude::*;
-use std::io::Write;
 use clap::Parser;
+use env_logger::{Builder, Env};
 use log::{debug, info};
 use prettytable::Table;
+use pyo3::prelude::*;
+use std::io::Write;
 
 use regex::Regex;
-
 
 pub mod cli;
 pub mod config;
@@ -37,10 +38,10 @@ pub const DEFAULT_CONFIG: &str = include_str!("../../default-config.toml");
 pub const DATABASE_HANDLER: &str = include_str!("../ArmoryAtlasDBHandler.py");
 
 use crate::config::{get_config, write_config};
-use crate::db_handler::{DBHandler, DetailedItem, DetailedItems};
 use crate::db_handler::in_stock_size::{InStockSize, InStockSizes};
 use crate::db_handler::loans::{DetailedLoan, DetailedLoans};
 use crate::db_handler::users::Users;
+use crate::db_handler::{DBHandler, DetailedItem, DetailedItems};
 use crate::leandings::Loans;
 use crate::password_handler::get_db_pass;
 use crate::users::User;
@@ -56,20 +57,20 @@ pub struct ItemProduct {
 }
 
 /// Search for items in the database
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `search_param`: The search parameter to search for.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```
 /// # use armory_atlas_lib::search_items;
-/// 
+///
 /// let items = search_items("test");
 /// ```
-/// 
-/// 
+///
+///
 pub async fn search_items(search_param: &str) -> Result<Vec<DetailedItem>> {
     let items = DBHandler::new()?.search_items(search_param)?;
 
@@ -79,44 +80,46 @@ pub async fn search_items(search_param: &str) -> Result<Vec<DetailedItem>> {
 /// Generates test data
 ///
 /// This is the main function to generate test data for an Armory Atlas database.  
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `args`: The `GenerateArgs` struct containing the subcommand and the number of items to generate.
 /// * `db_handler`: The `DBHandler` struct that handles the database operations.
-/// 
+///
 /// # Usage
-/// 
+///
 /// Its only meant to be used by the `run_cli` function!
-/// 
+///
 fn generate_test_data(args: GenerateArgs, db_handler: DBHandler) -> Result<()> {
     match args.subcommands {
         Some(GenerateSubCommands::Products) => insert_products(&db_handler)?,
-        
+
         Some(GenerateSubCommands::Items(sub_args)) => {
             insert_items(&db_handler, sub_args.num_items)?
         }
-        
+
         Some(GenerateSubCommands::Users(sub_args)) => {
             users::insert_users(&db_handler, sub_args.num_users)?
-        },
-        
+        }
+
         Some(GenerateSubCommands::Loans(sub_args)) => {
             println!("Inserting {} loans", sub_args.num_loans);
             leandings::insert_leandings(&db_handler, sub_args.num_loans)?
         }
-        
+
         _ => {
             println!("No subcommand provided. Generating for all tables with default values...");
-            
+
             match insert_products(&db_handler) {
                 Ok(_) => {}
                 Err(e) => {
-                    println!("Error inserting products: {}\nProducts might already be in the database", e);
-                    
+                    println!(
+                        "Error inserting products: {}\nProducts might already be in the database",
+                        e
+                    );
                 }
             }
-            
+
             insert_items(&db_handler, args.num_to_generate.unwrap())?;
             users::insert_users(&db_handler, args.num_to_generate.unwrap())?;
             leandings::insert_leandings(&db_handler, args.num_to_generate.unwrap())?;
@@ -162,16 +165,16 @@ pub fn extract_sql_from_string(content: &str) -> Result<Vec<String>> {
     Ok(res)
 }
 
-/// Setup the logger 
+/// Setup the logger
 ///  
 /// # Example
-/// 
+///
 /// ```no_run
 /// # use armory_atlas_lib::setup_logger;
 /// setup_logger() // This can only be run once!
 /// # .unwrap();
 /// ```
-/// 
+///
 pub fn setup_logger() -> Result<()> {
     // Get the current timestamp
     let now = Local::now();
@@ -223,11 +226,11 @@ pub fn setup_logger() -> Result<()> {
 /// # Examples
 ///
 /// ```
-/// # use armory_atlas_lib::run_cli; 
+/// # use armory_atlas_lib::run_cli;
 /// # fn main() -> anyhow::Result<()> {
 ///     // Running the CLI without any arguments will trigger default command parsing.
 ///     run_cli(None)?;
-///     // Running the CLI with specific arguments./// 
+///     // Running the CLI with specific arguments.///
 ///     run_cli(Some(vec!["ArmoryAtlas".to_string(), "get".to_string(), "users".to_string(), "10".to_string()]))?;
 /// #   Ok(())
 /// # }
@@ -242,7 +245,7 @@ pub fn run_cli(args: Option<Vec<String>>) -> Result<()> {
     } else {
         Command::parse()
     };
-    
+
     let config = get_config()?;
 
     let (user, host, _database) = (
@@ -269,7 +272,7 @@ pub fn run_cli(args: Option<Vec<String>>) -> Result<()> {
             if args.create_all {
                 db_handler.create_all()?;
             }
-        },
+        }
         Some(CommandType::Get(args)) => {
             match args.subcommands {
                 GetSubCommands::Items(args) => {
@@ -278,7 +281,9 @@ pub fn run_cli(args: Option<Vec<String>>) -> Result<()> {
                         let items: DetailedItems = db_handler.get_items()?.into();
                         println!("{}", Table::from(items))
                     } else {
-                        let items: DetailedItems = db_handler.get_items()?[..args.limit.unwrap()].to_vec().into();
+                        let items: DetailedItems = db_handler.get_items()?[..args.limit.unwrap()]
+                            .to_vec()
+                            .into();
                         println!("{}", Table::from(items))
                     }
                 }
@@ -297,9 +302,13 @@ pub fn run_cli(args: Option<Vec<String>>) -> Result<()> {
                         println!("{}", Table::from(loans))
                     } else {
                         let loans: DetailedLoans = if args.ssn.is_some() {
-                            db_handler.user_all_borrowed(args.ssn.unwrap())?[..args.limit.unwrap()].to_vec().into()
+                            db_handler.user_all_borrowed(args.ssn.unwrap())?[..args.limit.unwrap()]
+                                .to_vec()
+                                .into()
                         } else {
-                            db_handler.get_loans()?[..args.limit.unwrap()].to_vec().into()
+                            db_handler.get_loans()?[..args.limit.unwrap()]
+                                .to_vec()
+                                .into()
                         };
                         println!("{}", Table::from(loans))
                     }
@@ -309,19 +318,19 @@ pub fn run_cli(args: Option<Vec<String>>) -> Result<()> {
                         let users: Users = db_handler.get_users()?.into();
                         println!("{}", Table::from(users));
                     } else {
-                        let users: Users = db_handler.get_users()?[..args.limit.unwrap()].to_vec().into();
+                        let users: Users = db_handler.get_users()?[..args.limit.unwrap()]
+                            .to_vec()
+                            .into();
                         println!("{}", Table::from(users));
                     }
                 }
             }
         }
-        Some(CommandType::Return(args)) => {
-            match args.subcommands {
-                ReturnSubCommands::Item(args) => {
-                    db_handler.return_item(args.item_id)?;
-                }
+        Some(CommandType::Return(args)) => match args.subcommands {
+            ReturnSubCommands::Item(args) => {
+                db_handler.return_item(args.item_id)?;
             }
-        }
+        },
         _ => {
             //run_tui(pool).await?;
         }

@@ -1,6 +1,6 @@
-use std::ops::{Index};
-use prettytable::{Row, row, Table};
-use pyo3::{FromPyObject, pyclass, pymethods};
+use prettytable::{row, Row, Table};
+use pyo3::{pyclass, pymethods, FromPyObject};
+use std::ops::Index;
 
 #[derive(FromPyObject)]
 pub struct PyDetailedLoan {
@@ -33,7 +33,7 @@ impl DetailedLoan {
     pub fn repr(&self) -> String {
         format!("{:?}", self)
     }
-    
+
     #[pyo3(name = "__str__")]
     pub fn str(&self) -> String {
         format!("{:?}", self)
@@ -50,12 +50,12 @@ impl DetailedLoans {
     fn get_detailed_loans(&self) -> Vec<DetailedLoan> {
         self.0.clone()
     }
-    
+
     #[pyo3(name = "__repr__")]
     pub fn repr(&self) -> String {
         format!("{:?}", self)
     }
-    
+
     #[pyo3(name = "__str__")]
     pub fn str(&self) -> String {
         format!("{:?}", self)
@@ -91,8 +91,6 @@ impl From<PyDetailedLoan> for DetailedLoan {
         }
     }
 }
-
-
 
 impl From<Vec<DetailedLoan>> for DetailedLoans {
     fn from(detailed_loans: Vec<DetailedLoan>) -> Self {
@@ -145,7 +143,10 @@ impl From<&DetailedLoan> for Row {
             value.product_name,
             value.size,
             value.borrow_date,
-            value.return_date.clone().unwrap_or("Not Returned yet".to_string())
+            value
+                .return_date
+                .clone()
+                .unwrap_or("Not Returned yet".to_string())
         ]
     }
 }
@@ -153,12 +154,19 @@ impl From<&DetailedLoan> for Row {
 impl From<DetailedLoans> for Table {
     fn from(detailed_loans: DetailedLoans) -> Self {
         let mut table = Table::new();
-        table.add_row(row!["Lending ID", "SSN", "Name", "Item ID", "Product Name", "Size", "Borrowing Date", "Return Date"]);
+        table.add_row(row![
+            "Lending ID",
+            "SSN",
+            "Name",
+            "Item ID",
+            "Product Name",
+            "Size",
+            "Borrowing Date",
+            "Return Date"
+        ]);
         for loan in detailed_loans.0 {
             table.add_row((&loan).into());
         }
         table
     }
 }
-
-
