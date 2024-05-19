@@ -25,7 +25,7 @@ jobs:
     if: "startsWith(github.ref, 'refs/tags/')"
     strategy:
       matrix:
-        target: [ x86_64, x86, aarch64, armv7 ]
+        target: [x86_64, x86, aarch64, armv7]
     steps:
       - uses: actions/checkout@v4
       - name: Install OpenSSL and pkg-config
@@ -38,6 +38,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
+          target: ${{ matrix.target }}
           override: true
       - name: Cache cargo registry
         uses: actions/cache@v2
@@ -68,21 +69,21 @@ jobs:
 
       - name: Rename the binary to include OS
         run: |
-          mv target/release/${{ env.BINARY_NAME }} target/release/${{ env.BINARY_NAME }}-${{ matrix.target }}
+          mv target/release/${{ env.BINARY_NAME }} target/release/${{ env.BINARY_NAME }}-${{ runner.os }}_${{ matrix.target }}
 
       - name: Upload the binary for release job
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.BINARY_NAME }}-${{ matrix.target }}
+          name: binary-${{ runner.os }}-${{ matrix.target }}
           path: |
-            target/release/${{ env.BINARY_NAME }}-${{ matrix.target }}
+            target/release/${{ env.BINARY_NAME }}-${{ runner.os }}_${{ matrix.target }}
 
   linux-wheels:
     runs-on: ubuntu-latest
     if: "startsWith(github.ref, 'refs/tags/')"
     strategy:
       matrix:
-        target: [ x86_64, x86, aarch64, armv7 ]
+        target: [x86_64, x86, aarch64, armv7]
     steps:
       - uses: actions/checkout@v4
       - name: Install OpenSSL and pkg-config
@@ -115,7 +116,7 @@ jobs:
     if: "startsWith(github.ref, 'refs/tags/')"
     strategy:
       matrix:
-        target: [ x64, x86 ]
+        target: [x64, x86]
     steps:
       - uses: actions/checkout@v4
       - name: Install OpenSSL
@@ -124,6 +125,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
+          target: ${{ matrix.target }}
           override: true
       - name: Cache cargo registry
         uses: actions/cache@v2
@@ -154,14 +156,14 @@ jobs:
 
       - name: Rename the binary to include OS
         run: |
-          mv target/release/${{ env.BINARY_NAME }}.exe target/release/${{ env.BINARY_NAME }}-${{ matrix.target }}.exe
+          mv target/release/${{ env.BINARY_NAME }}.exe target/release/${{ env.BINARY_NAME }}-${{ runner.os }}_${{ matrix.target }}.exe
 
       - name: Upload the binary for release job
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.BINARY_NAME }}-${{ matrix.target }}
+          name: binary-${{ runner.os }}-${{ matrix.target }}.exe
           path: |
-            target/release/${{ env.BINARY_NAME }}-${{ matrix.target }}.exe
+            target/release/${{ env.BINARY_NAME }}-${{ runner.os }}_${{ matrix.target }}.exe
 
   windows-wheels:
     runs-on: windows-latest
@@ -205,6 +207,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
+          target: ${{ matrix.target }}
           override: true
       - name: Cache cargo registry
         uses: actions/cache@v2
@@ -234,13 +237,13 @@ jobs:
         run: cargo build --release
       - name: Rename the binary to include OS
         run: |
-          mv target/release/${{ env.BINARY_NAME }} target/release/${{ env.BINARY_NAME }}-${{ matrix.target }}
+          mv target/release/${{ env.BINARY_NAME }} target/release/${{ env.BINARY_NAME }}-${{ runner.os }}_${{ matrix.target }}
       - name: Upload the binary for release job
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.BINARY_NAME }}-${{ matrix.target }}
+          name: binary-${{ runner.os }}-${{ matrix.target }}
           path: |
-            target/release/${{ env.BINARY_NAME }}-${{ matrix.target }}
+            target/release/${{ env.BINARY_NAME }}-${{ runner.os }}_${{ matrix.target }}
 
   macos-wheels:
     runs-on: macos-latest
@@ -268,57 +271,6 @@ jobs:
         with:
           name: wheels-macos-${{ matrix.target }}
           path: ${{ env.WHEEL_PATH }}
-
-  macos-m1:
-    runs-on: macos-latest
-    if: "startsWith(github.ref, 'refs/tags/')"
-    strategy:
-      matrix:
-        target: [ x86_64, aarch64 ]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install OpenSSL
-        run: brew install openssl
-      # compile rust binary
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          override: true
-      - name: Cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-registry-
-
-      - name: Cache cargo index
-        uses: actions/cache@v2
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-git-
-
-      - name: Cache cargo build
-        uses: actions/cache@v2
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-target-
-
-      - name: Build binary
-        run: cargo build --release
-      - name: Rename the binary to include OS
-        run: |
-          mv target/release/${{ env.BINARY_NAME }} target/release/${{ env.BINARY_NAME }}-${{ matrix.target }}
-      - name: Upload the binary for release job
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ env.BINARY_NAME }}-${{ matrix.target }}
-          path: |
-            target/release/${{ env.BINARY_NAME }}-${{ matrix.target }}
 
   macos-m1-wheels:
     runs-on: macos-14
@@ -370,17 +322,102 @@ jobs:
   release:
     runs-on: ubuntu-latest
     if: "startsWith(github.ref, 'refs/tags/')"
-    needs: [ linux, windows, macos, macos-m1, macos-m1-wheels, linux-wheels, windows-wheels, macos-wheels, sdist ]
+    needs: [linux, windows, macos, macos-m1-wheels, linux-wheels, windows-wheels, macos-wheels, sdist]
     steps:
-      - name: Download wheels artifacts
+      - name: Download wheel artifacts
         uses: actions/download-artifact@v4
         with:
-          name: wheels-linux-x86_64, wheels-linux-x86, wheels-linux-aarch64, wheels-linux-armv7, wheels-windows-x64, wheels-windows-x86, wheels-macos-x86_64, wheels-macos-aarch64, wheels-macos-aarch64-apple-darwin, wheels-sdist
-          path: ${{ env.PY_PROJECT_DIR }}/dist
+          name: wheels-linux-x86_64
+          path: wheels-linux-x86_64/
+      - name: Download wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-linux-x86
+          path: wheels-linux-x86/
+      - name: Download wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-linux-aarch64
+          path: wheels-linux-aarch64/
+      - name: Download wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-linux-armv7
+          path: wheels-linux-armv7/
+      - name: Download wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-windows-x64
+          path: wheels-windows-x64/
+      - name: Download wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-windows-x86
+          path: wheels-windows-x86/
+      - name: Download wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-macos-x86_64
+          path: wheels-macos-x86_64/
+      - name: Download wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-macos-aarch64
+          path: wheels-macos-aarch64/
+      - name: Download wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-macos-aarch64-apple-darwin
+          path: wheels-macos-aarch64-apple-darwin/
+      - name: Download wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-sdist
+          path: wheels-sdist/
       - name: Download binary artifacts
         uses: actions/download-artifact@v2
         with:
-          name: armory_atlas-x86_64, armory_atlas-x86, armory_atlas-aarch64, armory_atlas-armv7, armory_atlas-x64, armory_atlas-x86, armory_atlas-x86_64, armory_atlas-aarch64, armory_atlas-aarch64-apple-darwin
+          name: binary-ubuntu-latest-x86_64
+          path: binaries/
+      - name: Download binary artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: binary-ubuntu-latest-x86
+          path: binaries/
+      - name: Download binary artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: binary-ubuntu-latest-aarch64
+          path: binaries/
+      - name: Download binary artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: binary-ubuntu-latest-armv7
+          path: binaries/
+      - name: Download binary artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: binary-windows-latest-x64
+          path: binaries/
+      - name: Download binary artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: binary-windows-latest-x86
+          path: binaries/
+      - name: Download binary artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: binary-macos-latest-x86_64
+          path: binaries/
+      - name: Download binary artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: binary-macos-latest-aarch64
+          path: binaries/
+      - name: Download binary artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: binary-macos-14-aarch64-apple-darwin
           path: binaries/
       - name: Create GitHub Release
         id: create_release
