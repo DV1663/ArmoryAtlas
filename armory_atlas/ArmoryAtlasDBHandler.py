@@ -98,19 +98,35 @@ class AllBorrowed:
 
 class DBHandler:
     """
-    The `DBHandler` class is responsible for interacting with the MySQL database
-    that holds the Armory Atlas inventory data. It provides methods to establish
-    a database connection and to perform queries such as retrieving available
-    items.
+    A class for handling database operations on the Armory Atlas system.
+
+    This class provides methods to interact with MySQL database to perform CRUD operations
+    and execute specific business logic such as fetching random users or items,
+    listing loans, and returning items.
 
     Attributes:
         db (mysql.connector.connection.MySQLConnection): The database connection object.
         cursor (mysql.connector.cursor.MySQLCursor): The cursor object for executing queries.
 
     Methods:
-        __init__(self): Initializes the DBHandler instance, establishing a database connection.
-        Get_items(self): Retrieves a list of available items from the database.
-        Get_config(): Retrieves the database configuration from a .toml file.
+        __init__(self): Initializes a new DBHandler instance, establishes database connection using configuration settings.
+        get_rand_user(self) -> User: Retrieves a random user from the Users table.
+        get_rand_item(self) -> Item: Fetches a random item that is not currently lent out.
+        get_users(self) -> list[User]: Gets a list of all users from the Users table.
+        get_loans(self) -> list[AllBorrowed]: Retrieves a detailed list of all loans, including user and item information.
+        get_items(self) -> list[ItemProduct]: Gets a list of items, along with product details and available quantity.
+        get_in_stock_size(self, product_id: str, size: str) -> list[InStockSize]: Gets the stock count for a specific product ID and size.
+        return_item(self, item_id: str) -> None: Executes a stored procedure to return an item and update the Lendings table.
+        user_all_borrowed(self, ssn: str) -> list[AllBorrowed]: Retrieves all borrowed items for a specific user.
+        number_of_borrows(self) -> int: Retrieves the number of borrows for each user, both current and total.
+        get_config() -> dict: Retrieves the configuration settings for the database connection.
+        insert_user(self, user) -> None: Inserts a new user into the Users table.
+        insert_item(self, item) -> None: Inserts a new item into the Items table.
+        insert_loan(self, loan) -> None: Inserts a new lending into the Lendings table.
+        insert_product(self, product) -> None: Inserts a new product into the Products table.
+        search_items(self, product_id: str, size: str) -> list[Item]: Searches for items in the Items table based on product ID and size.
+        drop_all(self) -> None: Drops all tables, triggers, functions, procedures, and views in the database.
+        create_all(self) -> None: Creates all tables, triggers, functions, procedures, and views in the database.
     """
 
     def __init__(self):
@@ -131,6 +147,12 @@ class DBHandler:
         self.cursor = self.db.cursor()
 
     def get_rand_user(self) -> User:
+        """
+        Retrieves a random user from the Users table.
+
+        :return:
+            A User object representing the random user fetched from the database.
+        """
         query = """
             SELECT * FROM Users ORDER BY RAND() LIMIT 1;
                     """
@@ -141,6 +163,16 @@ class DBHandler:
         return users_list[0]
 
     def get_rand_item(self) -> Item:
+        """
+        Fetches a random item not currently lent out.
+
+        :return:
+            An Item object representing the random item fetched from the database.
+
+        :raise Exception: If no item is available to borrow.
+        :raise mysql.connector.Error: If there is an error while executing the database query.
+        """
+
         query = """
             SELECT BIN_TO_UUID(i.ItemID) as ItemID, 
                 i.ProductID, 
@@ -149,7 +181,7 @@ class DBHandler:
             FROM Items i
             WHERE i.ItemID NOT IN (
                 SELECT ItemID FROM Lendings WHERE ReturnDate IS NULL
-            ) limit 1;
+            ) order by rand() limit 1;
         """
 
         try:
@@ -164,6 +196,12 @@ class DBHandler:
         return item
 
     def get_users(self) -> list[User]:
+        """
+        Retrieves all users from the Users table and returns a list of User objects.
+
+        :return:
+            A list of User objects representing all users in the database.
+        """
         query = """
             SELECT * FROM Users;
                     """
@@ -174,6 +212,13 @@ class DBHandler:
         return users_list
 
     def get_loans(self) -> list[AllBorrowed]:
+        """
+        Retrieves all loans from the Lendings table and returns a list of AllBorrowed objects.
+
+        :return:
+            A list of AllBorrowed objects representing all loans in the database.
+
+        """
         query = """
             SELECT l.LendingID, l.SSN, u.Name, l.ItemID, p.NameOfProduct, i.Size, l.BorrowingDate, l.ReturnDate
             FROM Lendings l
@@ -194,6 +239,12 @@ class DBHandler:
         return loans_list
 
     def get_items(self) -> list[ItemProduct]:
+        """
+        Retrieves a list of items along with their product details and quantity.
+
+        :return:
+            A list of ItemProduct objects representing the items fetched from the database.
+        """
         query = """
             SELECT
                     i.ProductID as product_id,
@@ -215,6 +266,17 @@ class DBHandler:
         return item_list
 
     def get_in_stock_size(self, product_id: str, size: str) -> list[InStockSize]:
+        """
+        Retrieves the in-stock size information for a specific product and size.
+
+        :param product_id: The ID of the product as a string.
+        :param size: The size of the product as a string.
+
+        :return:
+            A list of InStockSize objects containing information about the product's availability in the specified size.
+
+        :raise mysql.connector.Error: If there is an error while executing the database query.
+        """
         query = f"""
             SELECT 
                 p.ProductID as product_id,
@@ -246,6 +308,15 @@ class DBHandler:
             raise err
 
     def return_item(self, item_id: str):
+        """
+        Returns an item to the inventory.
+
+        :param item_id: The ID of the item to be returned as a string.
+        :return:
+            None
+
+        :raise mysql.connector.Error: If there is an error while executing the database query.
+        """
         query = f"""
             CALL return_item(UUID_TO_BIN('{item_id}'));
         """
@@ -257,18 +328,23 @@ class DBHandler:
             # Fetch results to ensure procedure executed
             for result in results:
                 if result.with_rows:
-                    data = result.fetchall()
-                    print("Procedure output:", data)
+                    _ = result.fetchall()
                 else:
                     print("Procedure affected rows:", result.rowcount)
 
             # Commit the transaction
             self.db.commit()
-            print("Item returned successfully")
         except Exception as e:
-            print(f"An error occurred: {e}")
+            raise e
 
     def user_all_borrowed(self, ssn: str) -> list[AllBorrowed]:
+        """
+        Retrieves all borrowed items for a specific user.
+
+        :param ssn: The SSN of the user as a string.
+        :return:
+            A list of AllBorrowed objects containing information about the user's borrowed items.
+        """
         query = f"""
             select * from show_borrowed_view where SSN = ('{ssn}');
                     """
@@ -279,6 +355,12 @@ class DBHandler:
         return allborrowed_list
 
     def number_of_borrowes(self) -> list[TotBorrowes]:
+        """
+        Retrieves the total number of borrowes for each user.
+
+        :return:
+            A list of TotBorrowes objects containing information about the total number of borrowes for each user.
+        """
         query = """
             SELECT * FROM number_of_borrowes;
                     """
@@ -290,6 +372,12 @@ class DBHandler:
 
     @staticmethod
     def get_config() -> dict:
+        """
+        Retrieves the Armory Atlas config file.
+
+        :return:
+            A dictionary containing the Armory Atlas config.
+        """
         if os.name == 'nt':
             home_dir = os.getenv('USERPROFILE')
         else:
@@ -301,11 +389,19 @@ class DBHandler:
         return config
 
     def insert_loan(self, loan) -> None:
+        """
+        Inserts a loan into the database.
+
+        :param loan: The loan object to be inserted.
+        :return:
+            None
+        :raise mysql.connector.Error: If there is an error while executing the database query.
+        """
         borrowing_date = loan.borrowing_date.strftime('%Y-%m-%d') if loan.borrowing_date else None
         return_date = loan.return_date.strftime('%Y-%m-%d') if loan.return_date else None
         query = f"""
             INSERT INTO Lendings (LendingID, SSN, ItemID, BorrowingDate, ReturnDate) 
-            VALUES (UUID_TO_BIN(UUID()), '{loan.user_id}', UUID_TO_BIN('{loan.item_id}'), '{borrowing_date}', %s);
+            VALUES (UUID_TO_BIN(UUID()), '{loan.ssn}', UUID_TO_BIN('{loan.item_id}'), '{borrowing_date}', %s);
         """
 
         try:
@@ -316,6 +412,14 @@ class DBHandler:
             raise err
 
     def insert_product(self, product) -> None:
+        """
+        Inserts a product into the database.
+
+        :param product: The product object to be inserted.
+        :return:
+            None
+        :raise mysql.connector.Error: If there is an error while executing the database query.
+        """
         query = f"""
             INSERT INTO Products (ProductID, NameOfProduct, Type) VALUES ('{product.product_id}', '{product.product_name}', '{product.product_type}')
             """
@@ -328,6 +432,14 @@ class DBHandler:
             raise err
 
     def insert_item(self, item) -> None:
+        """
+        Inserts an item into the database.
+
+        :param item: The item object to be inserted.
+        :return:
+            None
+        :raise mysql.connector.Error: If there is an error while executing the database query.
+        """
         query = f"""
             INSERT INTO Items (ItemID, ProductID, Size, Quality) VALUES (UUID_TO_BIN(UUID()), \"{item.product_id}\", \"{item.size}\", {item.quality})
         """
@@ -340,6 +452,14 @@ class DBHandler:
             raise err
 
     def insert_user(self, user) -> None:
+        """
+        Inserts a user into the database.
+
+        :param user: The user object to be inserted.
+        :return:
+            None
+        :raise mysql.connector.Error: If there is an error while executing the database query.
+        """
         query = f"""
             INSERT INTO Users (SSN, Name) VALUES (\"{user.ssn}\", \"{user.name}\")
         """
@@ -352,6 +472,14 @@ class DBHandler:
             raise err
 
     def search_items(self, search_param: str) -> list[ItemProduct]:
+        """
+        Searches for items in the database.
+        It will get a list of items that have the search parameter in their name, type or size.
+
+        :param search_param: The search parameter.
+        :return:
+            A list of items that have the search parameter in their name, type or size.
+        """
         query = f"""
             SELECT
                 i.ProductID as product_id,
@@ -447,6 +575,12 @@ class DBHandler:
         self.cursor.fetchall()
 
     def drop_all(self):
+        """
+        Drops all the tables in the database.
+
+        :return:
+            None
+        """
         self._drop_tables()
         self._drop_triggers()
         self._drop_procedures()
@@ -654,6 +788,12 @@ class DBHandler:
             pass  # Ensure we iterate through all results
 
     def create_all(self):
+        """
+        Create all tables, triggers, functions, procedures and views
+
+        :return:
+            None
+        """
         self._create_tables()
         self._create_triggers()
         self._create_functions()

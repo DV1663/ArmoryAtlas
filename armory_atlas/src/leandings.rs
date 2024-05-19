@@ -18,7 +18,7 @@ pub fn insert_leandings(db_handler: &DBHandler, num_leandings: usize) -> anyhow:
 #[pyo3::pyclass]
 pub struct Loans {
     pub leanding_id: String,
-    pub user_id: String,
+    pub ssn: String,
     pub item_id: String,
     pub borrowing_date: NaiveDate,
     pub return_date: Option<NaiveDate>,
@@ -28,14 +28,14 @@ pub struct Loans {
 impl Loans {
     #[new]
     pub fn new(
-        user_id: String,
+        ssn: String,
         product_id: String,
         borrowing_date: NaiveDate,
         return_date: Option<NaiveDate>,
     ) -> Self {
         Self {
             leanding_id: String::new(),
-            user_id,
+            ssn,
             item_id: product_id,
             borrowing_date,
             return_date,
@@ -80,7 +80,7 @@ impl Loans {
 
         Ok(Self {
             leanding_id: String::new(),
-            user_id: user.ssn,
+            ssn: user.ssn,
             item_id: product.item_id,
             borrowing_date,
             return_date,
@@ -91,7 +91,7 @@ impl Loans {
     pub fn repr(&self) -> String {
         format!(
             "Lending ID: {}\nUser ID: {}\nProduct ID: {}\nBorrowing Date: {}\nReturn Date: {:?}",
-            self.leanding_id, self.user_id, self.item_id, self.borrowing_date, self.return_date
+            self.leanding_id, self.ssn, self.item_id, self.borrowing_date, self.return_date
         )
     }
     
@@ -100,9 +100,9 @@ impl Loans {
         self.leanding_id.clone()
     }
     
-    #[getter(user_id)]
-    pub fn get_user_id(&self) -> String {
-        self.user_id.clone()
+    #[getter(ssn)]
+    pub fn get_ssn(&self) -> String {
+        self.ssn.clone()
     }
     
     #[getter(item_id)]

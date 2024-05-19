@@ -1,6 +1,6 @@
 use std::ops::{Index};
 use prettytable::{Row, row, Table};
-use pyo3::{FromPyObject, pyclass};
+use pyo3::{FromPyObject, pyclass, pymethods};
 
 #[derive(FromPyObject)]
 pub struct PyDetailedLoan {
@@ -14,7 +14,7 @@ pub struct PyDetailedLoan {
     pub return_date: Option<String>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[pyclass]
 pub struct DetailedLoan {
     pub lending_id: String,
@@ -26,8 +26,41 @@ pub struct DetailedLoan {
     pub borrow_date: String,
     pub return_date: Option<String>,
 }
+
+#[pymethods]
+impl DetailedLoan {
+    #[pyo3(name = "__repr__")]
+    pub fn repr(&self) -> String {
+        format!("{:?}", self)
+    }
+    
+    #[pyo3(name = "__str__")]
+    pub fn str(&self) -> String {
+        format!("{:?}", self)
+    }
+}
+
+#[derive(Debug)]
 #[pyclass]
 pub struct DetailedLoans(Vec<DetailedLoan>);
+
+#[pymethods]
+impl DetailedLoans {
+    #[getter(loans)]
+    fn get_detailed_loans(&self) -> Vec<DetailedLoan> {
+        self.0.clone()
+    }
+    
+    #[pyo3(name = "__repr__")]
+    pub fn repr(&self) -> String {
+        format!("{:?}", self)
+    }
+    
+    #[pyo3(name = "__str__")]
+    pub fn str(&self) -> String {
+        format!("{:?}", self)
+    }
+}
 
 impl From<DetailedLoan> for PyDetailedLoan {
     fn from(detailed_loan: DetailedLoan) -> Self {

@@ -1,6 +1,6 @@
 use std::ops::Index;
 use prettytable::{Row, row, Table};
-use pyo3::FromPyObject;
+use pyo3::{FromPyObject, pyclass, pymethods};
 use rayon::prelude::*;
 use crate::users::User;
 
@@ -10,7 +10,27 @@ pub struct PyUser {
     pub name: String,
 }
 
+#[derive(Debug)]
+#[pyclass]
 pub struct Users(Vec<User>);
+
+#[pymethods]
+impl Users {
+    #[getter(users)]
+    fn get_users(&self) -> Vec<User> {
+        self.0.clone()
+    }
+    
+    #[pyo3(name = "__repr__")]
+    pub fn repr(&self) -> String {
+        format!("{:?}", self)
+    }
+    
+    #[pyo3(name = "__str__")]
+    pub fn str(&self) -> String {
+        format!("{:?}", self)
+    }
+}
 
 impl From<PyUser> for User {
     fn from(py_user: PyUser) -> Self {

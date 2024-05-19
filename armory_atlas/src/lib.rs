@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+
 use std::fs;
 use std::fs::File;
 
@@ -36,9 +38,10 @@ pub const DATABASE_HANDLER: &str = include_str!("../ArmoryAtlasDBHandler.py");
 
 use crate::config::{get_config, write_config};
 use crate::db_handler::{DBHandler, DetailedItem, DetailedItems};
-use crate::db_handler::in_stock_size::InStockSizes;
-use crate::db_handler::loans::DetailedLoans;
+use crate::db_handler::in_stock_size::{InStockSize, InStockSizes};
+use crate::db_handler::loans::{DetailedLoan, DetailedLoans};
 use crate::db_handler::users::Users;
+use crate::leandings::Loans;
 use crate::password_handler::get_db_pass;
 use crate::users::User;
 
@@ -52,13 +55,41 @@ pub struct ItemProduct {
     size: String,
 }
 
+/// Search for items in the database
+/// 
+/// # Arguments
+/// 
+/// * `search_param`: The search parameter to search for.
+/// 
+/// # Example
+/// 
+/// ```
+/// # use armory_atlas_lib::search_items;
+/// 
+/// let items = search_items("test");
+/// ```
+/// 
+/// 
 pub async fn search_items(search_param: &str) -> Result<Vec<DetailedItem>> {
     let items = DBHandler::new()?.search_items(search_param)?;
 
     Ok(items)
 }
 
-pub fn generate_test_data(args: GenerateArgs, db_handler: DBHandler) -> Result<()> {
+/// Generates test data
+///
+/// This is the main function to generate test data for an Armory Atlas database.  
+/// 
+/// # Arguments
+/// 
+/// * `args`: The `GenerateArgs` struct containing the subcommand and the number of items to generate.
+/// * `db_handler`: The `DBHandler` struct that handles the database operations.
+/// 
+/// # Usage
+/// 
+/// Its only meant to be used by the `run_cli` function!
+/// 
+fn generate_test_data(args: GenerateArgs, db_handler: DBHandler) -> Result<()> {
     match args.subcommands {
         Some(GenerateSubCommands::Products) => insert_products(&db_handler)?,
         
@@ -131,6 +162,16 @@ pub fn extract_sql_from_string(content: &str) -> Result<Vec<String>> {
     Ok(res)
 }
 
+/// Setup the logger 
+///  
+/// # Example
+/// 
+/// ```no_run
+/// # use armory_atlas_lib::setup_logger;
+/// setup_logger() // This can only be run once!
+/// # .unwrap();
+/// ```
+/// 
 pub fn setup_logger() -> Result<()> {
     // Get the current timestamp
     let now = Local::now();
@@ -163,10 +204,39 @@ pub fn setup_logger() -> Result<()> {
 }
 
 #[pyfunction]
+/// Executes the command-line interface for the Armory Atlas application.
+///
+/// This function parses the given command-line arguments and performs actions
+/// based on the parsed commands and subcommands. It handles configuration,
+/// generation of test data, and database management tasks such as creating
+/// and dropping tables.
+///
+/// # Arguments
+///
+/// * `args`: An optional vector of strings representing the command-line arguments.
+///
+/// # Errors
+///
+/// This function returns an error if any operation such as parsing arguments,
+/// accessing configuration, connecting to the database, or executing commands fails.
+///
+/// # Examples
+///
+/// ```
+/// # use armory_atlas_lib::run_cli; 
+/// # fn main() -> anyhow::Result<()> {
+///     // Running the CLI without any arguments will trigger default command parsing.
+///     run_cli(None)?;
+///     // Running the CLI with specific arguments./// 
+///     run_cli(Some(vec!["ArmoryAtlas".to_string(), "get".to_string(), "users".to_string(), "10".to_string()]))?;
+/// #   Ok(())
+/// # }
+/// ```
+///
+/// # Panics
+///
+/// This function may panic if unwrapping operations on optional values fail.
 pub fn run_cli(args: Option<Vec<String>>) -> Result<()> {
-    info!("Starting Armory Atlas...");
-    setup_logger()?;
-
     let cmd = if let Some(args) = args {
         Command::parse_from(args)
     } else {
@@ -175,7 +245,7 @@ pub fn run_cli(args: Option<Vec<String>>) -> Result<()> {
     
     let config = get_config()?;
 
-    let (user, host, database) = (
+    let (user, host, _database) = (
         cmd.user.unwrap_or(config.get("user")?),
         cmd.host.unwrap_or(config.get("host")?),
         cmd.database.unwrap_or(config.get("database")?),
@@ -260,10 +330,20 @@ pub fn run_cli(args: Option<Vec<String>>) -> Result<()> {
     Ok(())
 }
 
+#[allow(deprecated)]
 #[pymodule]
 fn armory_atlas_lib(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Item>()?;
     m.add_class::<DBHandler>()?;
+    m.add_class::<InStockSize>()?;
+    m.add_class::<InStockSizes>()?;
+    m.add_class::<DetailedItem>()?;
+    m.add_class::<DetailedItems>()?;
+    m.add_class::<DetailedLoan>()?;
+    m.add_class::<DetailedLoans>()?;
+    m.add_class::<User>()?;
+    m.add_class::<Users>()?;
+    m.add_class::<Loans>()?;
 
     m.add_function(wrap_pyfunction!(run_cli, m)?)?;
     Ok(())

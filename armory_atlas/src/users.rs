@@ -99,6 +99,16 @@ impl User {
     pub fn get_name(&self) -> String {
         self.name.clone()
     }
+    
+    #[pyo3(name = "__repr__")]
+    pub fn repr(&self) -> String {
+        format!("{:?}", self)
+    }
+    
+    #[pyo3(name = "__str__")]
+    pub fn str(&self) -> String {
+        format!("SSN: {}\nName: {}", self.ssn, self.name)
+    }
 }
 
 #[derive(Debug, Clone, FromPyObject)]

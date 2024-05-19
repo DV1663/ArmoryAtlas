@@ -17,13 +17,26 @@ pub mod in_stock_size;
 pub mod loans;
 pub mod users;
 
+/// The main struct for the database handler
+///
+/// Currently, it's built with a python implementation used inside the rust code but will later be 
+/// replaced with a pure rust implementation.
+/// 
+/// # Example
+/// 
+/// ``` no_run
+/// # use armory_atlas_lib::db_handler::DBHandler;
+/// 
+/// let db_handler = DBHandler::new().unwrap();
+/// ```
+/// 
 #[derive(Clone)]
 #[pyclass]
 pub struct DBHandler {
     pool: PyObject,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[pyclass]
 pub struct DetailedItem {
     pub product_id: String,
@@ -31,6 +44,19 @@ pub struct DetailedItem {
     pub product_type: String,
     pub quantity: i64,
     pub size: String,
+}
+
+#[pymethods]
+impl DetailedItem {
+    #[pyo3(name = "__repr__")]
+    pub fn repr(&self) -> String {
+        format!("{:?}", self)
+    }
+    
+    #[pyo3(name = "__str__")]
+    pub fn str(&self) -> String {
+        format!("{:?}", self)
+    }
 }
 
 impl From<ItemProduct> for DetailedItem {
@@ -81,7 +107,26 @@ impl From<&DetailedItem> for Row {
     }
 }
 
+#[derive(Debug)]
+#[pyclass]
 pub struct DetailedItems(Vec<DetailedItem>);
+
+#[pymethods]
+impl DetailedItems {
+    #[getter(items)]
+    fn get_items(&self) -> Vec<DetailedItem> {
+        self.0.clone()
+    }
+    #[pyo3(name = "__repr__")]
+    pub fn repr(&self) -> String {
+        format!("{:?}", self)
+    }
+    
+    #[pyo3(name = "__str__")]
+    pub fn str(&self) -> String {
+        format!("{:?}", self)
+    }
+}
 
 impl Index<usize> for DetailedItems {
     type Output = DetailedItem;
@@ -183,8 +228,8 @@ impl DBHandler {
     pub fn get_rand_user(&self) -> anyhow::Result<User> {
         Python::with_gil(|py| {
             let users = self.pool.call_method0(py, "get_rand_user")?;
-            let user: User = users.extract(py)?;
-            Ok(user)
+            let user: PyUser = users.extract(py)?;
+            Ok(user.into())
         })
     }
     
