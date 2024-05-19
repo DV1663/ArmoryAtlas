@@ -44,6 +44,10 @@ def main():
     system, machine, python_version = get_system_info()
     print(f"System: {system}, Machine: {machine}, Python Version: {python_version}")
 
+    if system == "linux" and machine == "x86_64":
+        print("Skipping installation on Linux x86_64.\n")
+        return
+
     try:
         wheel_file = find_wheel_file(system, machine, python_version)
         print(f"Found wheel file: {wheel_file}")
