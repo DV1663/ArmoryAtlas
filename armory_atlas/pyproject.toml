@@ -14,4 +14,4 @@ dynamic = ["version"]
 dependencies = ["cffi", "mysql-connector-python", "toml"]
 
 [tool.maturin]
-features = ["py-bindings"]
+features = ["py-bindings", "python-db"]

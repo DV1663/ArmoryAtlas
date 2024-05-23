@@ -4,41 +4,6 @@ import toml
 import uuid
 
 
-class ItemProduct:
-    def __init__(self, product_id, product_name, product_type, quantity, size):
-        self.product_id = product_id
-        self.product_name = product_name
-        self.product_type = product_type
-        self.quantity = quantity
-        self.size = size
-
-    def __repr__(self):
-        return (f"Product ID: {self.product_id}, Product Name: {self.product_name}, Product Type: {self.product_type}, "
-                f"Quantity: {self.quantity}, Size: {self.size}")
-
-
-class InStockSize:
-    def __init__(self, product_id, product_name, size, tot_in):
-        self.product_id = product_id
-        self.product_name = product_name
-        self.size = size
-        self.tot_in = tot_in
-
-    def __repr__(self):
-        return f"Product ID: {self.product_id}, Size: {self.size}, In Stock: {self.tot_in}"
-
-
-class TotBorrowes:
-    def __init__(self, ssn, name, tot_borrowes, curr_borrowes):
-        self.ssn = ssn
-        self.name = name
-        self.tot_borrowes = tot_borrowes
-        self.curr_borrowes = curr_borrowes
-
-    def __repr__(self):
-        return f"SSN: {self.ssn}, Name: {self.name}, Total Borrowes: {self.tot_borrowes}, Current Borrowes: {self.curr_borrowes}"
-
-
 class User:
     def __init__(self, ssn, name):
         self.ssn = ssn
@@ -66,6 +31,41 @@ def create_item_dict(item):
         "size": item.size,
         "quality": item.quality
     }
+
+
+class ItemProduct:
+    def __init__(self, product_id, product_name, product_type, quantity, size):
+        self.product_id = product_id
+        self.product_name = product_name
+        self.product_type = product_type
+        self.quantity = quantity
+        self.size = size
+
+    def __repr__(self):
+        return (f"Product ID: {self.product_id}, Product Name: {self.product_name}, Product Type: {self.product_type}, "
+                f"Quantity: {self.quantity}, Size: {self.size}")
+
+
+class InStockSize:
+    def __init__(self, product_id, product_name, size, tot_in):
+        self.product_id = product_id
+        self.product_name = product_name
+        self.size = size
+        self.tot_in = tot_in
+
+    def __repr__(self):
+        return f"Product ID: {self.product_id}, Size: {self.size}, In Stock: {self.tot_in}"
+
+
+class NumberBorrow:
+    def __init__(self, ssn, name, tot_borrowes, curr_borrowes):
+        self.ssn = ssn
+        self.name = name
+        self.tot_borrowes = tot_borrowes
+        self.curr_borrowes = curr_borrowes
+
+    def __repr__(self):
+        return f"SSN: {self.ssn}, Name: {self.name}, Total Borrowes: {self.tot_borrowes}, Current Borrowes: {self.curr_borrowes}"
 
 
 class AllBorrowed:
@@ -354,7 +354,7 @@ class DBHandler:
         allborrowed_list = [AllBorrowed(*allborrowed) for allborrowed in allborrowed]
         return allborrowed_list
 
-    def number_of_borrowes(self) -> list[TotBorrowes]:
+    def number_of_borrowes(self) -> list[NumberBorrow]:
         """
         Retrieves the total number of borrowes for each user.
 
@@ -367,7 +367,7 @@ class DBHandler:
 
         self.cursor.execute(query)
         borrowes = self.cursor.fetchall()
-        borrowes_list = [TotBorrowes(*borrowes) for borrowes in borrowes]
+        borrowes_list = [NumberBorrow(*borrowes) for borrowes in borrowes]
         return borrowes_list
 
     @staticmethod
@@ -677,18 +677,15 @@ class DBHandler:
             """,
             """
             CREATE TRIGGER IF NOT EXISTS update_quality
-                AFTER UPDATE ON Lendings
-                FOR EACH ROW
-                BEGIN
-                    IF OLD.ReturnDate IS NULL AND NEW.ReturnDate IS NOT NULL THEN
-                        UPDATE
-                            Items
-                        SET
-                            Quality = (Quality - 0.10)
-                        WHERE
-                            ItemID = NEW.ItemID;
-                    END IF;
-                END;
+            AFTER UPDATE ON Lendings
+            FOR EACH ROW
+            BEGIN
+                IF OLD.ReturnDate IS NULL AND NEW.ReturnDate IS NOT NULL THEN
+                    UPDATE Items
+                    SET Quality = (Quality - 0.10)
+                    WHERE ItemID = NEW.ItemID;
+                END IF;
+            END;
             """
         ]
 
@@ -800,8 +797,17 @@ class DBHandler:
         self._create_procedures()
         self._create_views()
 
+    def test(self):
+        query = """
+            SELECT * FROM ArmoryAtlas.Items where Quality <= 0.10;
+        """
+
+        self.cursor.execute(query)
+        items = self.cursor.fetchall()
+        print(items)
+
 
 if __name__ == "__main__":
     db = DBHandler()
-    db.return_item("177bf0f5-1434-11ef-ad4b-00e04c0313ab")
+    db.test()
 

@@ -26,7 +26,7 @@ tokio = { version = "1.0.0", features = ["rt", "rt-multi-thread", "macros", "ful
 # utils
 rayon = "1.10.0"
 keyring = { version = "2.3.2", features = ["platform-all"] }
-itertools = "0.12.1"
+itertools = "0.13.0"
 config = { version = "0.14.0", features = ["toml"] }
 rpassword = "7.3.1"
 rand = "0.8.5"
@@ -34,7 +34,7 @@ regex = "1.10.4"
 uuid = { version = "1.8.0", features = ["serde", "v4"] }
 
 # CLI and TUI
-clap = { version = "4.0.32", features = ["derive", "usage", "color", "help", "suggestions", "error-context"] }
+clap = { version = "4.0.32", features = ["derive", "usage", "color", "help", "suggestions", "error-context", "wrap_help"] }
 crossterm = "0.27.0"
 ratatui = "0.26.2"
 tui-textarea = { version =  "0.4.0", features = ["crossterm"] }
@@ -43,3 +43,6 @@ tui-textarea = { version =  "0.4.0", features = ["crossterm"] }
 log = "0.4.21"
 env_logger = "0.11.3"
 chrono = "0.4.38"
+
+# SurrealDB
+surrealdb = "1.5.0"

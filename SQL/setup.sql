@@ -134,19 +134,24 @@ DELIMITER ;
 
 
 DELIMITER //
-CREATE TRIGGER update_quality
-    AFTER UPDATE ON Lendings
-    FOR EACH ROW
-    BEGIN
-        IF OLD.ReturnDate IS NULL AND NEW.ReturnDate IS NOT NULL THEN
-            UPDATE
-                Items
-            SET
-                Quality = (Quality - 0.10)
-            WHERE
-                ItemID = NEW.ItemID;
+
+CREATE TRIGGER IF NOT EXISTS update_quality
+AFTER UPDATE ON Lendings
+FOR EACH ROW
+BEGIN
+    IF OLD.ReturnDate IS NULL AND NEW.ReturnDate IS NOT NULL THEN
+        -- Check the quality before updating it
+        IF (SELECT Quality FROM Items WHERE ItemID = NEW.ItemID) < 0.10 THEN
+            DELETE FROM Items
+            WHERE ItemID = NEW.ItemID;
+        ELSE
+            UPDATE Items
+            SET Quality = (Quality - 0.10)
+            WHERE ItemID = NEW.ItemID;
         END IF;
-    END //
+    END IF;
+END;
+
 DELIMITER ;
 
 # ============================================================================================================== #

@@ -1,22 +1,11 @@
-/*
-INSERT INTO `Items` (`ItemID`, `ProductID`, `Size`, `LevelOfUse`)
-VALUES (UUID_TO_BIN(UUID()), 'your_product_id', 'L', 0.5);
+#[cfg(feature = "python-db")]
+mod python_impl;
 
-CREATE TABLE `Items` (
-  `ItemID` binary(16) NOT NULL,
-  `ProductID` varchar(50) NOT NULL,
-  `Size` varchar(5) DEFAULT NULL,
-  `LevelOfUse` float NOT NULL,
-  PRIMARY KEY (`ItemID`),
-  KEY `FKs` (`ProductID`),
-  CONSTRAINT `FKs` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-*/
-
-use crate::db_handler::DBHandler;
+use crate::cli::InsertItemArgs;
+#[cfg(feature = "python-db")]
+use crate::python_db_handler::DBHandlerPy as DBHandler;
 use anyhow::Result;
 use prettytable::{row, Row, Table};
-use pyo3::{pymethods, FromPyObject};
 use rand::Rng;
 use rayon::prelude::*;
 use std::fmt::Display;
@@ -25,9 +14,10 @@ use crate::products;
 
 pub const SIZES: [&str; 6] = ["XS", "S", "M", "L", "XL", "XXL"];
 
-#[derive(Debug, FromPyObject)]
-#[cfg_attr(feature = "rs-db", derive(sqlx::FromRow))]
-#[pyo3::pyclass]
+#[derive(Debug)]
+#[cfg_attr(feature = "python-db", derive(pyo3::FromPyObject))]
+#[cfg_attr(feature = "mysql-db", derive(sqlx::FromRow))]
+#[cfg_attr(feature = "python-db", pyo3::pyclass)]
 pub struct Item {
     pub item_id: String,
     pub product_id: String,
@@ -41,6 +31,17 @@ pub struct TmpItem {
     pub product_id: String,
     pub size: String,
     pub quality: f32,
+}
+
+impl Item {
+    pub fn new(item_id: String, product_id: String, size: String, quality: f32) -> Self {
+        Self {
+            item_id,
+            product_id,
+            size,
+            quality,
+        }
+    }
 }
 
 impl From<&Item> for TmpItem {
@@ -62,44 +63,6 @@ impl From<TmpItem> for Item {
             size: tmp_item.size,
             quality: tmp_item.quality,
         }
-    }
-}
-
-#[pymethods]
-impl Item {
-    #[new]
-    pub fn new(item_id: String, product_id: String, size: String, quality: f32) -> Self {
-        Self {
-            item_id,
-            product_id,
-            size,
-            quality,
-        }
-    }
-
-    #[getter(item_id)]
-    pub fn get_item_id(&self) -> String {
-        self.item_id.clone()
-    }
-
-    #[getter(product_id)]
-    pub fn get_product_id(&self) -> String {
-        self.product_id.clone()
-    }
-
-    #[getter(size)]
-    pub fn get_size(&self) -> String {
-        self.size.clone()
-    }
-
-    #[getter(quality)]
-    pub fn get_quality(&self) -> f32 {
-        self.quality
-    }
-
-    #[pyo3(name = "__repr__")]
-    pub fn repr(&self) -> String {
-        self.to_string()
     }
 }
 
@@ -222,4 +185,15 @@ pub fn insert_items(db_handler: &DBHandler, num_items: usize) -> Result<()> {
     }
 
     Ok(())
+}
+
+impl From<InsertItemArgs> for Item {
+    fn from(insert_item_args: InsertItemArgs) -> Self {
+        Self {
+            item_id: String::new(),
+            product_id: insert_item_args.product_id,
+            size: insert_item_args.size,
+            quality: insert_item_args.quality,
+        }
+    }
 }

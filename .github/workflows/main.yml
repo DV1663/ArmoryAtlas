@@ -1,4 +1,4 @@
-name: Build and Release
+name: CI
 
 on:
   push:
@@ -11,7 +11,6 @@ on:
   workflow_dispatch:
 
 env:
-  BINARY_NAME: armory_atlas
   PY_PROJECT_DIR: armory_atlas
   WHEEL_PATH: armory_atlas/dist
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
@@ -25,70 +24,15 @@ jobs:
     if: "startsWith(github.ref, 'refs/tags/')"
     strategy:
       matrix:
-        target: [x86_64, x86, aarch64, armv7]
+        target: [ x86_64, x86, aarch64, armv7 ]
     steps:
       - uses: actions/checkout@v4
       - name: Install OpenSSL and pkg-config
         run: |
           sudo apt-get update
           sudo apt-get install -y openssl libssl-dev pkg-config python3 python3-dev
-      - name: Verify pkg-config installation
-        run: pkg-config --version
-      # compile rust binary
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          override: true
-      - name: Cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-registry-
-
-      - name: Cache cargo index
-        uses: actions/cache@v2
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-git-
-
-      - name: Cache cargo build
-        uses: actions/cache@v2
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-target-
-
-      - name: Build binary
-        run: cargo build --release
-
-      - name: Rename the binary to include OS
-        run: |
-          mv target/release/${{ env.BINARY_NAME }} target/release/${{ env.BINARY_NAME }}-${{ runner.os }}_${{ matrix.target }}
-
-      - name: Upload the binary for release job
-        uses: actions/upload-artifact@v2
-        with:
-          name: binary-${{ runner.os }}-${{ matrix.target }}
-          path: |
-            target/release/${{ env.BINARY_NAME }}-${{ runner.os }}_${{ matrix.target }}
-
-  linux-wheels:
-    runs-on: ubuntu-latest
-    if: "startsWith(github.ref, 'refs/tags/')"
-    strategy:
-      matrix:
-        target: [x86_64, x86, aarch64, armv7]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install OpenSSL and pkg-config
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y openssl libssl-dev pkg-config python3 python3-dev
+          echo "::add-path::/usr/bin"
+          echo "::add-path::/usr/local/bin"
       - name: Verify pkg-config installation
         run: pkg-config --version
       - uses: actions/setup-python@v5
@@ -111,59 +55,6 @@ jobs:
           path: ${{ env.WHEEL_PATH }}
 
   windows:
-    runs-on: windows-latest
-    if: "startsWith(github.ref, 'refs/tags/')"
-    strategy:
-      matrix:
-        target: [x64, x86]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install OpenSSL
-        run: choco install openssl
-      # compile rust binary
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          override: true
-      - name: Cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-registry-
-
-      - name: Cache cargo index
-        uses: actions/cache@v2
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-git-
-
-      - name: Cache cargo build
-        uses: actions/cache@v2
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-target-
-
-      - name: Build binary
-        run: cargo build --release
-
-      - name: Rename the binary to include OS
-        run: |
-          mv target/release/${{ env.BINARY_NAME }}.exe target/release/${{ env.BINARY_NAME }}-${{ runner.os }}_${{ matrix.target }}.exe
-
-      - name: Upload the binary for release job
-        uses: actions/upload-artifact@v2
-        with:
-          name: binary-${{ runner.os }}-${{ matrix.target }}.exe
-          path: |
-            target/release/${{ env.BINARY_NAME }}-${{ runner.os }}_${{ matrix.target }}.exe
-
-  windows-wheels:
     runs-on: windows-latest
     if: "startsWith(github.ref, 'refs/tags/')"
     strategy:
@@ -201,57 +92,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install OpenSSL
         run: brew install openssl
-      # compile rust binary
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          override: true
-      - name: Cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-registry-
-
-      - name: Cache cargo index
-        uses: actions/cache@v2
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-git-
-
-      - name: Cache cargo build
-        uses: actions/cache@v2
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-target-
-
-      - name: Build binary
-        run: cargo build --release
-      - name: Rename the binary to include OS
-        run: |
-          mv target/release/${{ env.BINARY_NAME }} target/release/${{ env.BINARY_NAME }}-${{ runner.os }}_${{ matrix.target }}
-      - name: Upload the binary for release job
-        uses: actions/upload-artifact@v2
-        with:
-          name: binary-${{ runner.os }}-${{ matrix.target }}
-          path: |
-            target/release/${{ env.BINARY_NAME }}-${{ runner.os }}_${{ matrix.target }}
-
-  macos-wheels:
-    runs-on: macos-latest
-    if: "startsWith(github.ref, 'refs/tags/')"
-    strategy:
-      matrix:
-        target: [x86_64, aarch64]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install OpenSSL
-        run: brew install openssl
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -269,7 +109,7 @@ jobs:
           name: wheels-macos-${{ matrix.target }}
           path: ${{ env.WHEEL_PATH }}
 
-  macos-m1-wheels:
+  macos-m1:
     runs-on: macos-14
     if: "startsWith(github.ref, 'refs/tags/')"
     strategy:
@@ -319,103 +159,15 @@ jobs:
   release:
     runs-on: ubuntu-latest
     if: "startsWith(github.ref, 'refs/tags/')"
-    needs: [linux, windows, macos, macos-m1-wheels, linux-wheels, windows-wheels, macos-wheels, sdist]
+    needs: [ linux, windows, macos, macos-m1, sdist ]
     steps:
-      - name: Download wheel artifacts
+      - name: Download wheels artifacts
         uses: actions/download-artifact@v4
         with:
-          name: wheels-linux-x86_64
-          path: wheels-linux-x86_64/
-      - name: Download wheel artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: wheels-linux-x86
-          path: wheels-linux-x86/
-      - name: Download wheel artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: wheels-linux-aarch64
-          path: wheels-linux-aarch64/
-      - name: Download wheel artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: wheels-linux-armv7
-          path: wheels-linux-armv7/
-      - name: Download wheel artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: wheels-windows-x64
-          path: wheels-windows-x64/
-      - name: Download wheel artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: wheels-windows-x86
-          path: wheels-windows-x86/
-      - name: Download wheel artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: wheels-macos-x86_64
-          path: wheels-macos-x86_64/
-      - name: Download wheel artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: wheels-macos-aarch64
-          path: wheels-macos-aarch64/
-      - name: Download wheel artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: wheels-macos-aarch64-apple-darwin
-          path: wheels-macos-aarch64-apple-darwin/
-      - name: Download wheel artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: wheels-sdist
-          path: wheels-sdist/
-      - name: Download binary artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: binary-ubuntu-latest-x86_64
-          path: binaries/
-      - name: Download binary artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: binary-ubuntu-latest-x86
-          path: binaries/
-      - name: Download binary artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: binary-ubuntu-latest-aarch64
-          path: binaries/
-      - name: Download binary artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: binary-ubuntu-latest-armv7
-          path: binaries/
-      - name: Download binary artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: binary-windows-latest-x64
-          path: binaries/
-      - name: Download binary artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: binary-windows-latest-x86
-          path: binaries/
-      - name: Download binary artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: binary-macos-latest-x86_64
-          path: binaries/
-      - name: Download binary artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: binary-macos-latest-aarch64
-          path: binaries/
-      - name: Download binary artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: binary-macos-14-aarch64-apple-darwin
-          path: binaries/
+          path: ${{ env.PY_PROJECT_DIR }}/dist
+      - name: Zip wheels
+        run: |
+          zip -r ${{ env.PY_PROJECT_DIR }}/dist/wheels.zip ${{ env.PY_PROJECT_DIR }}/dist
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -426,21 +178,12 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
-      - name: Upload Wheel Assets
+      - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.PY_PROJECT_DIR }}/dist
-          asset_name: wheels
+          asset_path: ${{ env.PY_PROJECT_DIR }}/dist/wheels.zip
+          asset_name: wheels.zip
           asset_content_type: application/zip
-      - name: Upload Binary Assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: binaries/
-          asset_name: binaries
-          asset_content_type: application/octet-stream
