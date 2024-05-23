@@ -37,12 +37,14 @@ log = { workspace = true }
 env_logger = { workspace = true }
 chrono = { workspace = true }
 
-pyo3 = { workspace = true }
+pyo3 = { workspace = true, optional = true }
 
 prettytable-rs = "0.10.0"
 
 [features]
-default = []
+default = ["python-db"]
+python-db = ["dep:pyo3"]
 py-bindings = ["pyo3/extension-module", "pyo3/multiple-pymethods"]
-rs-db = ["sqlx", "sqlx-mysql"]
-tui = ["rs-db"]
+mysql-db = ["sqlx", "sqlx-mysql"]
+surreal-db = []
+tui = ["mysql-db"]

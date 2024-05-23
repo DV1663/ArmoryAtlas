@@ -1,27 +1,24 @@
-#![allow(unused_imports)]
+//#![allow(unused_imports)]
 
 use std::fs;
 use std::fs::File;
 
-use crate::cli::{
-    Command, CommandType, GenerateArgs, GenerateSubCommands, GetSubCommands, ReturnSubCommands,
-};
+use crate::cli::{Command, CommandType, GenerateArgs, GenerateSubCommands, GetArgs, GetSubCommands, InsertArgs, InsertSubCommands, ReturnSubCommands};
 use crate::items::{insert_items, Item};
 use crate::products::insert_products;
 use anyhow::Result;
 use chrono::Local;
 use clap::Parser;
 use env_logger::{Builder, Env};
-use log::{debug, info};
 use prettytable::Table;
-use pyo3::prelude::*;
 use std::io::Write;
 
 use regex::Regex;
 
 pub mod cli;
 pub mod config;
-pub mod db_handler;
+#[cfg(feature = "python-db")]
+pub mod python_db_handler;
 pub mod items;
 pub mod leandings;
 pub mod password_handler;
@@ -35,19 +32,28 @@ pub const CONFIG_FILE: &str = "config.toml";
 pub const PRODUCTS_FILE: &str = "products.json";
 pub const DEFAULT_PRODUCTS: &str = include_str!("../../default-products.json");
 pub const DEFAULT_CONFIG: &str = include_str!("../../default-config.toml");
-pub const DATABASE_HANDLER: &str = include_str!("../ArmoryAtlasDBHandler.py");
+#[cfg(feature = "python-db")]
+pub const PYTHON_DATABASE_HANDLER: &str = include_str!("../ArmoryAtlasDBHandler.py");
 
 use crate::config::{get_config, write_config};
-use crate::db_handler::in_stock_size::{InStockSize, InStockSizes};
-use crate::db_handler::loans::{DetailedLoan, DetailedLoans};
-use crate::db_handler::users::Users;
-use crate::db_handler::{DBHandler, DetailedItem, DetailedItems};
+
+#[cfg(feature = "python-db")]
+use crate::python_db_handler::{
+    in_stock_size::{InStockSize, InStockSizes},
+    loans::{DetailedLoan, DetailedLoans},
+    users::Users,
+    DBHandlerPy as DBHandler,
+    DetailedItem,
+    DetailedItems,
+};
+
 use crate::leandings::Loans;
 use crate::password_handler::get_db_pass;
 use crate::users::User;
 
-#[derive(Debug, FromPyObject, Clone)]
-#[cfg_attr(feature = "rs-db", derive(sqlx::FromRow))]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "python-db", derive(pyo3::FromPyObject))]
+#[cfg_attr(feature = "mysql-db", derive(sqlx::FromRow))]
 pub struct ItemProduct {
     product_id: String,
     product_name: String,
@@ -84,7 +90,7 @@ pub async fn search_items(search_param: &str) -> Result<Vec<DetailedItem>> {
 /// # Arguments
 ///
 /// * `args`: The `GenerateArgs` struct containing the subcommand and the number of items to generate.
-/// * `db_handler`: The `DBHandler` struct that handles the database operations.
+/// * `python_db_handler`: The `DBHandler` struct that handles the database operations.
 ///
 /// # Usage
 ///
@@ -165,7 +171,7 @@ pub fn extract_sql_from_string(content: &str) -> Result<Vec<String>> {
     Ok(res)
 }
 
-/// Setup the logger
+/// Set up the logger
 ///  
 /// # Example
 ///
@@ -206,7 +212,94 @@ pub fn setup_logger() -> Result<()> {
     Ok(())
 }
 
-#[pyfunction]
+fn get_subcommands(args: GetArgs, db_handler: DBHandler) -> Result<()> {
+    match args.subcommands {
+        GetSubCommands::Items(args) => {
+            if args.limit.is_none() {
+                // if limit is not specified we get all
+                let items: DetailedItems = db_handler.get_items()?.into();
+                println!("{}", Table::from(items))
+            } else {
+                let items: DetailedItems = db_handler.get_items()?[..args.limit.unwrap()]
+                    .to_vec()
+                    .into();
+                println!("{}", Table::from(items))
+            }
+        }
+        GetSubCommands::InStock(args) => {
+            let items = db_handler.get_in_stock_size(args.pruduct_id, args.size)?;
+            println!("{}", Table::from(items));
+        }
+        GetSubCommands::Loans(args) => {
+            if args.limit.is_none() {
+                // if limit is not specified we get all
+                let loans: DetailedLoans = if args.ssn.is_some() {
+                    db_handler.user_all_borrowed(args.ssn.unwrap())?.into()
+                } else {
+                    db_handler.get_loans()?.into()
+                };
+                println!("{}", Table::from(loans))
+            } else {
+                let loans: DetailedLoans = if args.ssn.is_some() {
+                    db_handler.user_all_borrowed(args.ssn.unwrap())?[..args.limit.unwrap()]
+                        .to_vec()
+                        .into()
+                } else {
+                    db_handler.get_loans()?[..args.limit.unwrap()]
+                        .to_vec()
+                        .into()
+                };
+                println!("{}", Table::from(loans))
+            }
+        }
+        GetSubCommands::Users(args) => {
+            if args.limit.is_none() {
+                let users: Users = db_handler.get_users()?.into();
+                println!("{}", Table::from(users));
+            } else {
+                let users: Users = db_handler.get_users()?[..args.limit.unwrap()]
+                    .to_vec()
+                    .into();
+                println!("{}", Table::from(users));
+            }
+        }
+
+        GetSubCommands::NumberOfLoans(args) => {
+            if args.limit.is_none() {
+                let users: NumberBorrows = db_handler.number_of_borrowes()?.into();
+                println!("{}", Table::from(users));
+            } else {
+                let users: NumberBorrows = db_handler.number_of_borrowes()?[..args.limit.unwrap()]
+                    .to_vec()
+                    .into();
+                println!("{}", Table::from(users));
+            }
+        }
+    }
+    
+    Ok(())
+}
+
+fn insert_subcommands(args: InsertArgs, db_handler: DBHandler) -> Result<()> {
+    match args.subcommands {
+        InsertSubCommands::Item(args) => {
+            db_handler.insert_item(args.into())?;
+        },
+        InsertSubCommands::User(args) => {
+            db_handler.insert_user(args.into())?;
+        },
+        InsertSubCommands::Loan(args) => {
+            db_handler.insert_loan(args.into())?;
+        },
+        InsertSubCommands::Product(args) => {
+            db_handler.insert_product(args.into())?;
+        },
+    }
+    
+    Ok(())
+}
+
+#[cfg_attr(feature = "python-db", pyo3::pyfunction)]
 /// Executes the command-line interface for the Armory Atlas application.
 ///
 /// This function parses the given command-line arguments and performs actions
@@ -259,13 +352,13 @@ pub fn run_cli(args: Option<Vec<String>>) -> Result<()> {
     let db_handler = DBHandler::new()?;
 
     match cmd.subcommands {
-        Some(CommandType::Config(args)) => {
+        CommandType::Config(args) => {
             write_config(&args, &password)?;
         }
-        Some(CommandType::Generate(args)) => {
+        CommandType::Generate(args) => {
             generate_test_data(args, db_handler)?;
         }
-        Some(CommandType::Manage(args)) => {
+        CommandType::Manage(args) => {
             if args.drop_all {
                 db_handler.drop_all()?;
             }
@@ -273,74 +366,29 @@ pub fn run_cli(args: Option<Vec<String>>) -> Result<()> {
                 db_handler.create_all()?;
             }
         }
-        Some(CommandType::Get(args)) => {
-            match args.subcommands {
-                GetSubCommands::Items(args) => {
-                    if args.limit.is_none() {
-                        // if limit is not specified we get all
-                        let items: DetailedItems = db_handler.get_items()?.into();
-                        println!("{}", Table::from(items))
-                    } else {
-                        let items: DetailedItems = db_handler.get_items()?[..args.limit.unwrap()]
-                            .to_vec()
-                            .into();
-                        println!("{}", Table::from(items))
-                    }
-                }
-                GetSubCommands::InStock(args) => {
-                    let items = db_handler.get_in_stock_size(args.pruduct_id, args.size)?;
-                    println!("{}", Table::from(items));
-                }
-                GetSubCommands::Loans(args) => {
-                    if args.limit.is_none() {
-                        // if limit is not specified we get all
-                        let loans: DetailedLoans = if args.ssn.is_some() {
-                            db_handler.user_all_borrowed(args.ssn.unwrap())?.into()
-                        } else {
-                            db_handler.get_loans()?.into()
-                        };
-                        println!("{}", Table::from(loans))
-                    } else {
-                        let loans: DetailedLoans = if args.ssn.is_some() {
-                            db_handler.user_all_borrowed(args.ssn.unwrap())?[..args.limit.unwrap()]
-                                .to_vec()
-                                .into()
-                        } else {
-                            db_handler.get_loans()?[..args.limit.unwrap()]
-                                .to_vec()
-                                .into()
-                        };
-                        println!("{}", Table::from(loans))
-                    }
-                }
-                GetSubCommands::Users(args) => {
-                    if args.limit.is_none() {
-                        let users: Users = db_handler.get_users()?.into();
-                        println!("{}", Table::from(users));
-                    } else {
-                        let users: Users = db_handler.get_users()?[..args.limit.unwrap()]
-                            .to_vec()
-                            .into();
-                        println!("{}", Table::from(users));
-                    }
-                }
-            }
+        CommandType::Get(args) => {
+            get_subcommands(args, db_handler)?;
         }
-        Some(CommandType::Return(args)) => match args.subcommands {
+        CommandType::Return(args) => match args.subcommands {
             ReturnSubCommands::Item(args) => {
                 db_handler.return_item(args.item_id)?;
             }
         },
-        _ => {
-            //run_tui(pool).await?;
+        CommandType::Insert(args) => {
+            insert_subcommands(args, db_handler)?;
         }
     };
 
     Ok(())
 }
 
+#[cfg(feature = "python-db")]
+use pyo3::prelude::*;
+use crate::python_db_handler::num_borrows::NumberBorrows;
+
+#[cfg(feature = "python-db")]
+#[cfg_attr(feature = "python-db", pymodule)]
 #[allow(deprecated)]
-#[pymodule]
 fn armory_atlas_lib(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<Item>()?;
     m.add_class::<DBHandler>()?;

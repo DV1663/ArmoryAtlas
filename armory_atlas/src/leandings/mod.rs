@@ -1,8 +1,12 @@
-use chrono::{Datelike, NaiveDate};
-use pyo3::{pymethods, FromPyObject};
-use rand::Rng;
+#[cfg(feature = "python-db")]
+mod python_impl;
 
-use crate::db_handler::DBHandler;
+use chrono::{Datelike, NaiveDate};
+use rand::Rng;
+use crate::cli::InsertLoanArgs;
+
+#[cfg(feature = "python-db")]
+use crate::python_db_handler::DBHandlerPy as DBHandler;
 
 pub fn insert_leandings(db_handler: &DBHandler, num_leandings: usize) -> anyhow::Result<()> {
     for _ in 0..num_leandings {
@@ -13,9 +17,10 @@ pub fn insert_leandings(db_handler: &DBHandler, num_leandings: usize) -> anyhow:
     Ok(())
 }
 
-#[derive(Debug, FromPyObject)]
-#[cfg_attr(feature = "rs-db", derive(sqlx::FromRow))]
-#[pyo3::pyclass]
+#[derive(Debug)]
+#[cfg_attr(feature = "python-db", derive(pyo3::FromPyObject))]
+#[cfg_attr(feature = "mysql-db", derive(sqlx::FromRow))]
+#[cfg_attr(feature = "python-db", pyo3::pyclass)]
 pub struct Loans {
     pub leanding_id: String,
     pub ssn: String,
@@ -24,9 +29,8 @@ pub struct Loans {
     pub return_date: Option<NaiveDate>,
 }
 
-#[pymethods]
 impl Loans {
-    #[new]
+    
     pub fn new(
         ssn: String,
         product_id: String,
@@ -41,8 +45,7 @@ impl Loans {
             return_date,
         }
     }
-
-    #[staticmethod]
+    
     pub fn generate_random_date(start_date: Option<NaiveDate>) -> NaiveDate {
         let mut rng = rand::thread_rng();
         let start_year = start_date.map(|d| d.year()).unwrap_or(1950);
@@ -64,8 +67,7 @@ impl Loans {
 
         NaiveDate::from_ymd_opt(year, month, day).unwrap()
     }
-
-    #[staticmethod]
+    
     pub fn new_random() -> anyhow::Result<Self> {
         let db = DBHandler::new()?;
         let product = db.get_rand_item()?;
@@ -88,37 +90,16 @@ impl Loans {
             return_date,
         })
     }
+}
 
-    #[pyo3(name = "__repr__")]
-    pub fn repr(&self) -> String {
-        format!(
-            "Lending ID: {}\nUser ID: {}\nProduct ID: {}\nBorrowing Date: {}\nReturn Date: {:?}",
-            self.leanding_id, self.ssn, self.item_id, self.borrowing_date, self.return_date
-        )
-    }
-
-    #[getter(id)]
-    pub fn get_leanding_id(&self) -> String {
-        self.leanding_id.clone()
-    }
-
-    #[getter(ssn)]
-    pub fn get_ssn(&self) -> String {
-        self.ssn.clone()
-    }
-
-    #[getter(item_id)]
-    pub fn get_product_id(&self) -> String {
-        self.item_id.clone()
-    }
-
-    #[getter(borrowing_date)]
-    pub fn get_borrowing_date(&self) -> NaiveDate {
-        self.borrowing_date
-    }
-
-    #[getter(return_date)]
-    pub fn get_return_date(&self) -> Option<NaiveDate> {
-        self.return_date
+impl From<InsertLoanArgs> for Loans {
+    fn from(insert_loan_args: InsertLoanArgs) -> Self {
+        Self {
+            leanding_id: String::new(),
+            ssn: insert_loan_args.ssn,
+            item_id: insert_loan_args.item_id,
+            borrowing_date: insert_loan_args.borrow_date,
+            return_date: insert_loan_args.return_date,
+        }
     }
 }

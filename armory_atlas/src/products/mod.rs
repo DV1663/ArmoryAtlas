@@ -1,13 +1,17 @@
-use crate::db_handler::DBHandler;
+#[cfg(feature = "python-db")]
+mod python_impl;
+
+#[cfg(feature = "python-db")]
+use crate::python_db_handler::DBHandlerPy as DBHandler;
 use crate::{CONFIG_DIR, DEFAULT_PRODUCTS, PRODUCTS_FILE};
 use anyhow::Result;
-use pyo3::{pyclass, pymethods};
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use std::path::PathBuf;
+use crate::cli::InsertProductArgs;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-#[pyclass]
+#[cfg_attr(feature = "python-db", pyo3::pyclass)]
 pub struct Product {
     #[serde(rename = "ProductID")]
     pub product_id: String,
@@ -17,9 +21,7 @@ pub struct Product {
     pub product_type: String,
 }
 
-#[pymethods]
 impl Product {
-    #[new]
     pub fn new(product_id: String, product_name: String, product_type: String) -> Self {
         Self {
             product_id,
@@ -27,22 +29,15 @@ impl Product {
             product_type,
         }
     }
+}
 
-    #[getter(product_id)]
-    pub fn get_product_id(&self) -> String {
-        let _ = CONFIG_DIR;
-        let _ = PRODUCTS_FILE; // ignore please, my IDEA was screaming at me
-        self.product_id.clone()
-    }
-
-    #[getter(product_name)]
-    pub fn get_product_name(&self) -> String {
-        self.product_name.clone()
-    }
-
-    #[getter(product_type)]
-    pub fn get_product_type(&self) -> String {
-        self.product_type.clone()
+impl From<InsertProductArgs> for Product {
+    fn from(args: InsertProductArgs) -> Self {
+        Self {
+            product_id: args.product_id,
+            product_name: args.product_name,
+            product_type: args.product_type,
+        }
     }
 }
 

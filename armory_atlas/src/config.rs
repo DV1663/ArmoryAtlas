@@ -8,11 +8,11 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Args, Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
-    #[arg(short, long, default_value = "root")]
+    #[arg(short, long, default_value = "root", help = "The user to connect to the database with.")]
     pub user: String,
-    #[arg(short = 'H', long, default_value = "localhost")]
+    #[arg(short = 'H', long, default_value = "localhost", help = "The host to connect to the database with.")]
     pub host: String,
-    #[arg(short, long, default_value = "ArmoryAtlas")]
+    #[arg(short, long, default_value = "ArmoryAtlas", help = "The name of the database to connect to.")]
     pub database: String,
 }
 

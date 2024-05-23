@@ -4,18 +4,20 @@ use prettytable::{row, Row, Table};
 use pyo3::prelude::*;
 use rayon::prelude::*;
 
-use crate::db_handler::in_stock_size::{InStockSize, InStockSizes};
-use crate::db_handler::loans::{DetailedLoan, PyDetailedLoan};
-use crate::db_handler::users::PyUser;
+use crate::python_db_handler::in_stock_size::{InStockSize, InStockSizes};
+use crate::python_db_handler::loans::{DetailedLoan, PyDetailedLoan};
+use crate::python_db_handler::users::PyUser;
 use crate::items::Item;
 use crate::leandings::Loans;
 use crate::products::Product;
 use crate::users::User;
-use crate::{ItemProduct, DATABASE_HANDLER};
+use crate::{ItemProduct, PYTHON_DATABASE_HANDLER};
+use crate::python_db_handler::num_borrows::{NumberBorrow, PyNumberBorrow};
 
 pub mod in_stock_size;
 pub mod loans;
 pub mod users;
+pub mod num_borrows;
 
 /// The main struct for the database handler
 ///
@@ -25,14 +27,14 @@ pub mod users;
 /// # Example
 ///
 /// ``` no_run
-/// # use armory_atlas_lib::db_handler::DBHandler;
+/// # use armory_atlas_lib::python_db_handler::DBHandlerPy;
 ///
-/// let db_handler = DBHandler::new().unwrap();
+/// let db_handler = DBHandlerPy::new().unwrap();
 /// ```
 ///
 #[derive(Clone)]
 #[pyclass]
-pub struct DBHandler {
+pub struct DBHandlerPy {
     pool: PyObject,
 }
 
@@ -178,11 +180,11 @@ impl From<DetailedItems> for Table {
 }
 
 #[pymethods]
-impl DBHandler {
+impl DBHandlerPy {
     #[new]
     pub fn new() -> anyhow::Result<Self> {
         pyo3::prepare_freethreaded_python();
-        let pool = DBHandler::get_db_handler_obj()?;
+        let pool = DBHandlerPy::get_db_handler_obj()?;
         Ok(Self { pool })
     }
 
@@ -224,7 +226,7 @@ impl DBHandler {
         Python::with_gil(|py| {
             let module = PyModule::from_code_bound(
                 py,
-                DATABASE_HANDLER,
+                PYTHON_DATABASE_HANDLER,
                 "ArmoryAtlasDBHandler.py",
                 "ArmoryAtlasDBHandler",
             )?;
@@ -325,6 +327,15 @@ impl DBHandler {
             Ok(loans)
         })
     }
+    
+    pub fn number_of_borrowes(&self) -> anyhow::Result<Vec<NumberBorrow>> {
+        Python::with_gil(|py| {
+            let loans = self.pool.call_method0(py, "number_of_borrowes")?;
+            let loans: Vec<PyNumberBorrow> = loans.extract(py)?;
+            let loans: Vec<NumberBorrow> = loans.into_par_iter().map(NumberBorrow::from).collect();
+            Ok(loans)
+        })
+    }
 }
 
 #[cfg(test)]
@@ -333,7 +344,7 @@ mod tests {
 
     #[test]
     fn test_get_db_handler_obj() {
-        let db_handler = DBHandler::get_db_handler_obj();
+        let db_handler = DBHandlerPy::get_db_handler_obj();
         match db_handler {
             Ok(_) => assert!(true),
             Err(e) => assert!(false, "{:?}", e),
@@ -342,7 +353,7 @@ mod tests {
 
     #[test]
     fn test_get_items() {
-        let db_handler = DBHandler::new();
+        let db_handler = DBHandlerPy::new();
         assert!(db_handler.is_ok());
 
         let db_handler = db_handler.unwrap();
@@ -352,7 +363,7 @@ mod tests {
 
     #[test]
     fn test_get_rand_item() {
-        let db_handler = DBHandler::new();
+        let db_handler = DBHandlerPy::new();
         assert!(db_handler.is_ok());
 
         let db_handler = db_handler.unwrap();
@@ -366,7 +377,7 @@ mod tests {
 
     #[test]
     fn test_get_rand_user() {
-        let db_handler = DBHandler::new();
+        let db_handler = DBHandlerPy::new();
         assert!(db_handler.is_ok());
 
         let db_handler = db_handler.unwrap();
